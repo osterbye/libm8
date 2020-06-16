@@ -41,6 +41,7 @@ public:
 signals:
     void statusChange(M8_STATUS status);
     void nmea(const QByteArray &nmea);
+    void newPosition(double latitude, double longitude, float altitude, quint8 satellites);
 
 private:
     M8Control *m_control;

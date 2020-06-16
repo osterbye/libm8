@@ -29,6 +29,8 @@ M8::M8(QString device, QObject *parent) : QObject(parent)
     m_control = new M8Control(device, this);
     connect(m_control, SIGNAL(statusChange(M8_STATUS)), this, SIGNAL(statusChange(M8_STATUS)));
     connect(m_control, SIGNAL(nmea(QByteArray)), this, SIGNAL(nmea(QByteArray)));
+    connect(m_control, SIGNAL(newPosition(double, double, float, quint8)), this,
+            SIGNAL(newPosition(double, double, float, quint8)));
 }
 
 M8_STATUS M8::status()

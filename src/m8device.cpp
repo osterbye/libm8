@@ -25,7 +25,7 @@ SOFTWARE.
 #include <qplatformdefs.h>
 #include <QSocketNotifier>
 
-//#define M8DEVICE_DEBUG
+#define M8DEVICE_DEBUG
 #ifdef M8DEVICE_DEBUG
 #include <QDebug>
 #define M8DEVICE_D(x) qDebug() << "[M8Device] " << x
@@ -34,7 +34,7 @@ SOFTWARE.
 #endif
 
 #define MAX_WRITE_DATA 512
-#define MAX_READ_DATA 2048
+#define MAX_READ_DATA 512
 
 M8Device::M8Device(QString device, QObject *parent) : QObject(parent)
 {
@@ -89,7 +89,7 @@ void M8Device::readDeviceData()
     M8DEVICE_D("Read " << bytesRead << " bytes");
     if (bytesRead > 0) {
         QByteArray newData(buffer, static_cast<int>(bytesRead));
-        M8DEVICE_D(newData);
+        //M8DEVICE_D(newData);
         emit data(newData);
     }
 }

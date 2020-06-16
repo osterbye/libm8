@@ -28,6 +28,7 @@ SOFTWARE.
 #include "m8_status.h"
 
 class M8Device;
+class NMEA;
 class QThread;
 
 class M8Control : public QObject
@@ -42,6 +43,7 @@ public:
 signals:
     void statusChange(M8_STATUS status);
     void nmea(const QByteArray &nmea);
+    void newPosition(double latitude, double longitude, float altitude, quint8 satellites);
 
 private slots:
     void deviceData(QByteArray ba);
@@ -54,6 +56,7 @@ private:
     QThread *m_m8DeviceThread;
     M8_STATUS m_status;
     QByteArray m_input;
+    NMEA *m_nmea;
 };
 
 #endif // M8CONTROL_H

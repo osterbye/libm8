@@ -23,6 +23,7 @@ SOFTWARE.
 */
 #include "m8control.h"
 #include "m8device.h"
+#include "nmea.h"
 #include <QThread>
 
 #define M8C_DEBUG
@@ -43,6 +44,9 @@ M8Control::M8Control(QString device, QObject *parent)
         m_m8DeviceThread = new QThread();
         m_m8Device->moveToThread(m_m8DeviceThread);
         m_m8DeviceThread->start();
+        m_nmea = new NMEA(this);
+        connect(m_nmea, SIGNAL(newPosition(double, double, float, quint8)), this,
+                SIGNAL(newPosition(double, double, float, quint8)));
         connect(m_m8Device, SIGNAL(data(QByteArray)), this, SLOT(deviceData(QByteArray)));
         setStatus(M8_STATUS_ON);
     } else {
@@ -68,27 +72,18 @@ M8_STATUS M8Control::status()
 
 void M8Control::deviceData(QByteArray ba)
 {
-#ifdef M8C_DEBUG
-    quint64 invalidChar = 0;
-#endif
     m_input.append(ba);
     while (!m_input.isEmpty()) {
         if (m_input.startsWith('$')) {
             int nmeaEnd = m_input.indexOf('\n');
-            // M8C_D("NMEA found. String ending at " << nmeaEnd);
             if (nmeaEnd >= 0) {
                 QByteArray nmeaStr = m_input.left(nmeaEnd);
-                int checksum = nmeaStr.mid(nmeaStr.length() - 3, 2).toInt(nullptr, 16);
-                int cks = 0;
-                for (int i = 1; i < nmeaStr.count() - 4; ++i) {
-                    cks ^= nmeaStr.at(i);
-                }
-                // M8C_D("Str cks: " << checksum << ", calc cks: " << cks);
-                if (checksum == cks) {
+                if (m_nmea->crcCheck(nmeaStr)) {
                     M8C_D("NMEA: " << nmeaStr);
                     emit nmea(nmeaStr);
+                    m_nmea->parse(nmeaStr);
                 } else {
-                    M8C_D("ERROR NMEA: " << checksum << " != " << cks << "\t\t" << nmeaStr);
+                    M8C_D("NMEA checksum error: " << nmeaStr);
                 }
                 m_input.remove(0, nmeaEnd);
             } else {
@@ -114,18 +109,9 @@ void M8Control::deviceData(QByteArray ba)
                 break;
             }
         } else {
-#ifdef M8C_DEBUG
-            if (m_input.at(0) != static_cast<char>(0xFF)
-                && m_input.at(0) != static_cast<char>(0x0A))
-                M8C_D("removed invalid char from beginning of array: "
-                      << QString::number(m_input.at(0) & 0xFF, 16).toLatin1())
-                        << " - " << m_input.at(0);
-            ++invalidChar;
-#endif
             m_input.remove(0, 1);
         }
     }
-    // M8C_D("Removed " << invalidChar << " invalid characters.");
 }
 
 void M8Control::setStatus(M8_STATUS status)

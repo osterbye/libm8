@@ -21,11 +21,13 @@ HEADERS += \
 SOURCES += \
     src/m8.cpp \
     src/m8control.cpp \
-    src/M8Device.cpp
+    src/m8device.cpp \
+    src/nmea.cpp
 
 HEADERS += \
     src/m8control.h \
-    src/M8Device.h
+    src/m8device.h \
+    src/nmea.h
 
 
 DESTDIR = $$_PRO_FILE_PWD_/bin/
