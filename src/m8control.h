@@ -47,6 +47,7 @@ signals:
 
 private slots:
     void deviceData(QByteArray ba);
+    void chipTimeout();
 
 private:
     void setStatus(M8_STATUS status);
@@ -57,6 +58,7 @@ private:
     M8_STATUS m_status;
     QByteArray m_input;
     NMEA *m_nmea;
+    bool m_chipConfirmationDone;
 };
 
 #endif // M8CONTROL_H

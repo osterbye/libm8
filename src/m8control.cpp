@@ -25,6 +25,7 @@ SOFTWARE.
 #include "m8device.h"
 #include "nmea.h"
 #include <QThread>
+#include <QTimer>
 
 #define M8C_DEBUG
 #ifdef M8C_DEBUG
@@ -37,7 +38,7 @@ SOFTWARE.
 #define BYTE(x) (x & 0xFF)
 
 M8Control::M8Control(QString device, QObject *parent)
-    : QObject(parent), m_status(M8_STATUS_INITIALIZING)
+    : QObject(parent), m_status(M8_STATUS_INITIALIZING), m_chipConfirmationDone(false)
 {
     m_m8Device = new M8Device(device);
     if (m_m8Device->isAvailable()) {
@@ -48,10 +49,10 @@ M8Control::M8Control(QString device, QObject *parent)
         connect(m_nmea, SIGNAL(newPosition(double, double, float, quint8)), this,
                 SIGNAL(newPosition(double, double, float, quint8)));
         connect(m_m8Device, SIGNAL(data(QByteArray)), this, SLOT(deviceData(QByteArray)));
-        setStatus(M8_STATUS_ON);
+        QTimer::singleShot(5000, this, SLOT(chipTimeout()));
     } else {
         delete m_m8Device;
-        setStatus(M8_STATUS_ERROR);
+        setStatus(M8_STATUS_ERROR_DRIVER);
     }
 }
 
@@ -70,6 +71,12 @@ M8_STATUS M8Control::status()
     return m_status;
 }
 
+/**
+ * @brief M8Control::deviceData
+ * @param ba
+ *
+ * Either NMEA or UBX message (disregarding CRC) will confirm chip presence.
+ */
 void M8Control::deviceData(QByteArray ba)
 {
     m_input.append(ba);
@@ -86,6 +93,9 @@ void M8Control::deviceData(QByteArray ba)
                     M8C_D("NMEA checksum error: " << nmeaStr);
                 }
                 m_input.remove(0, nmeaEnd);
+                m_chipConfirmationDone = true;
+                if (M8_STATUS_ON != m_status)
+                    setStatus(M8_STATUS_ON);
             } else {
                 M8C_D("Incomplete nmea string. Wait for more data. " << m_input);
                 break;
@@ -104,6 +114,7 @@ void M8Control::deviceData(QByteArray ba)
                         break;
                     }
                 }
+                m_chipConfirmationDone = true;
             } else {
                 M8C_D("Incomplete ubx message. Wait for more data.");
                 break;
@@ -112,6 +123,14 @@ void M8Control::deviceData(QByteArray ba)
             m_input.remove(0, 1);
         }
     }
+}
+
+void M8Control::chipTimeout()
+{
+    if (!m_chipConfirmationDone)
+        setStatus(M8_STATUS_ERROR_CHIP);
+
+    m_chipConfirmationDone = true;
 }
 
 void M8Control::setStatus(M8_STATUS status)

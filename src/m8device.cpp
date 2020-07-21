@@ -89,7 +89,7 @@ void M8Device::readDeviceData()
     M8DEVICE_D("Read " << bytesRead << " bytes");
     if (bytesRead > 0) {
         QByteArray newData(buffer, static_cast<int>(bytesRead));
-        //M8DEVICE_D(newData);
+        // M8DEVICE_D(newData);
         emit data(newData);
     }
 }
