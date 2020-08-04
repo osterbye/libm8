@@ -31,9 +31,21 @@ M8::M8(QString device, QObject *parent) : QObject(parent)
     connect(m_control, SIGNAL(nmea(QByteArray)), this, SIGNAL(nmea(QByteArray)));
     connect(m_control, SIGNAL(newPosition(double, double, float, quint8)), this,
             SIGNAL(newPosition(double, double, float, quint8)));
+    connect(m_control, SIGNAL(systemTimeDrift(qint64)), this, SIGNAL(systemTimeDrift(qint64)));
+    connect(m_control, SIGNAL(satelliteInfo(M8_SV_INFO)), this, SIGNAL(satelliteInfo(M8_SV_INFO)));
 }
 
 M8_STATUS M8::status()
 {
     return m_control->status();
+}
+
+void M8::requestTime()
+{
+    m_control->requestTime();
+}
+
+void M8::requestSatelliteInfo()
+{
+    m_control->requestSatelliteInfo();
 }

@@ -26,10 +26,12 @@ SOFTWARE.
 
 #include <QObject>
 #include "m8_status.h"
+#include "m8_sv_info.h"
 
 class M8Device;
 class NMEA;
 class QThread;
+class UBX;
 
 class M8Control : public QObject
 {
@@ -39,11 +41,15 @@ public:
     ~M8Control();
 
     M8_STATUS status();
+    void requestTime();
+    void requestSatelliteInfo();
 
 signals:
     void statusChange(M8_STATUS status);
     void nmea(const QByteArray &nmea);
     void newPosition(double latitude, double longitude, float altitude, quint8 satellites);
+    void systemTimeDrift(qint64 offsetMilliseconds);
+    void satelliteInfo(M8_SV_INFO info);
 
 private slots:
     void deviceData(QByteArray ba);
@@ -59,6 +65,7 @@ private:
     QByteArray m_input;
     NMEA *m_nmea;
     bool m_chipConfirmationDone;
+    UBX *m_ubx;
 };
 
 #endif // M8CONTROL_H

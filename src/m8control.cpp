@@ -24,18 +24,17 @@ SOFTWARE.
 #include "m8control.h"
 #include "m8device.h"
 #include "nmea.h"
+#include "ubx.h"
 #include <QThread>
 #include <QTimer>
 
-#define M8C_DEBUG
+//#define M8C_DEBUG
 #ifdef M8C_DEBUG
 #include <QDebug>
 #define M8C_D(x) qDebug() << "[m8control] " << x
 #else
 #define M8C_D(x)
 #endif
-
-#define BYTE(x) (x & 0xFF)
 
 M8Control::M8Control(QString device, QObject *parent)
     : QObject(parent), m_status(M8_STATUS_INITIALIZING), m_chipConfirmationDone(false)
@@ -48,6 +47,9 @@ M8Control::M8Control(QString device, QObject *parent)
         m_nmea = new NMEA(this);
         connect(m_nmea, SIGNAL(newPosition(double, double, float, quint8)), this,
                 SIGNAL(newPosition(double, double, float, quint8)));
+        m_ubx = new UBX(m_m8Device, this);
+        connect(m_ubx, SIGNAL(systemTimeDrift(qint64)), this, SIGNAL(systemTimeDrift(qint64)));
+        connect(m_ubx, SIGNAL(satelliteInfo(M8_SV_INFO)), this, SIGNAL(satelliteInfo(M8_SV_INFO)));
         connect(m_m8Device, SIGNAL(data(QByteArray)), this, SLOT(deviceData(QByteArray)));
         QTimer::singleShot(5000, this, SLOT(chipTimeout()));
     } else {
@@ -69,6 +71,16 @@ M8Control::~M8Control()
 M8_STATUS M8Control::status()
 {
     return m_status;
+}
+
+void M8Control::requestTime()
+{
+    m_ubx->requestTime();
+}
+
+void M8Control::requestSatelliteInfo()
+{
+    m_ubx->requestSatelliteInfo();
 }
 
 /**
@@ -102,12 +114,16 @@ void M8Control::deviceData(QByteArray ba)
             }
         } else if (m_input.startsWith(static_cast<char>(0xB5))) {
             if (m_input.count() >= 8) {
-                if (0x62 != BYTE(m_input.at(1))) {
+                if (0x62 != m_input.at(1)) {
                     M8C_D("Incorrect sync char for ubx message: " << m_input.at(1));
                     m_input.remove(0, 1);
                 } else {
-                    int payloadLen = BYTE(m_input.at(4)) | (BYTE(m_input.at(5)) << 8);
-                    if (m_input.count() >= (payloadLen + 8)) {
+                    int payloadLen = m_input.at(4) | (m_input.at(5) << 8);
+                    if (m_input.size() >= (payloadLen + 8)) {
+                        QByteArray ubxMessage = m_input.mid(2, payloadLen + 6);
+                        if (m_ubx->crcCheck(ubxMessage))
+                            m_ubx->parse(ubxMessage);
+
                         m_input.remove(0, payloadLen + 8);
                     } else {
                         M8C_D("Incomplete ubx message. Wait for more data.");

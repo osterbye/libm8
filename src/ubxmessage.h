@@ -21,22 +21,13 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
-#ifndef NMEA_H
-#define NMEA_H
+#ifndef UBXMESSAGE_H
+#define UBXMESSAGE_H
+#include <QByteArray>
 
-#include <QObject>
-
-class NMEA : public QObject
-{
-    Q_OBJECT
-public:
-    explicit NMEA(QObject *parent = nullptr);
-
-    bool crcCheck(const QByteArray &nmea);
-    void parse(const QByteArray &nmea);
-
-signals:
-    void newPosition(double latitude, double longitude, float altitude, quint8 satellites);
+struct UBXMessage {
+    QByteArray message;
+    bool ack;
 };
 
-#endif // NMEA_H
+#endif // UBXMESSAGE_H

@@ -26,6 +26,7 @@ SOFTWARE.
 
 #include "m8_global.h"
 #include "m8_status.h"
+#include "m8_sv_info.h"
 #include <QObject>
 
 class M8Control;
@@ -37,11 +38,15 @@ public:
     M8(QString device, QObject *parent = nullptr);
 
     M8_STATUS status();
+    void requestTime();
+    void requestSatelliteInfo();
 
 signals:
     void statusChange(M8_STATUS status);
     void nmea(const QByteArray &nmea);
     void newPosition(double latitude, double longitude, float altitude, quint8 satellites);
+    void systemTimeDrift(qint64 offsetMilliseconds);
+    void satelliteInfo(M8_SV_INFO info);
 
 private:
     M8Control *m_control;

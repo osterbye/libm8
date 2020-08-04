@@ -25,7 +25,7 @@ SOFTWARE.
 #include <qplatformdefs.h>
 #include <QSocketNotifier>
 
-#define M8DEVICE_DEBUG
+//#define M8DEVICE_DEBUG
 #ifdef M8DEVICE_DEBUG
 #include <QDebug>
 #define M8DEVICE_D(x) qDebug() << "[M8Device] " << x
