@@ -26,7 +26,7 @@ SOFTWARE.
 #include <QDateTime>
 #include <QTimer>
 
-#define UBX_DEBUG
+//#define UBX_DEBUG
 #ifdef UBX_DEBUG
 #include <QDebug>
 #define UBX_D(x) qDebug() << "[ubx] " << x
