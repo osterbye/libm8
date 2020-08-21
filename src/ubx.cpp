@@ -140,18 +140,159 @@ void UBX::parse(const QByteArray &msg)
             ack();
         } else if (0x00 == msg.at(1)) {
             UBX_D("!!! NACK !!!");
+            ack();
+        }
+        break;
+    case 0x06:
+        if (0x3E == msg.at(1)) {
+            UBX_D("GNSS configuration:");
+            UBX_D("Version:" << QString::number(msg.at(4) & 0xFF).toLatin1());
+            UBX_D("numTrkChHw:" << QString::number(msg.at(5) & 0xFF).toLatin1());
+            UBX_D("numTrkChUse:" << QString::number(msg.at(6) & 0xFF).toLatin1());
+            UBX_D("numConfigBlocks:" << QString::number(msg.at(7) & 0xFF).toLatin1());
+            int len = (msg.at(2)&0xFF) | (msg.at(3)<<8);
+            for (int i = 8; i < len; ++i) {
+                UBX_D(QString::number(msg.at(i) & 0xFF).toLatin1());
+            }
         }
         break;
     case 0x0A:
         if (0x09 == msg.at(1)) {
             UBX_D("Antenna status: " << QString::number(msg.at(24) & 0xFF).toLatin1());
             UBX_D("Antenna power:  " << QString::number(msg.at(25) & 0xFF).toLatin1());
+        } else if (0x28 == msg.at(1)) {
+            UBX_D("GNSS supported:\t\t" << QString::number(msg.at(5) & 0xFF).toLatin1());
+            UBX_D("GNSS default:\t\t" << QString::number(msg.at(5) & 0xFF).toLatin1());
+            UBX_D("GNSS enabled:\t\t" << QString::number(msg.at(5) & 0xFF).toLatin1());
+            UBX_D("GNSS simultaneous:\t" << QString::number(msg.at(5) & 0xFF).toLatin1());
         }
         break;
     default:
         UBX_D("Unknown response class: " << QString::number(msg.at(0)).toLatin1());
         break;
     }
+}
+
+void UBX::configureNMEA()
+{
+    // Disable all NMEA messsages except GGA
+    UBXMessage msgNMEAConf;
+    msgNMEAConf.ack = true;
+    msgNMEAConf.message.append(0x06);             /* Message class */
+    msgNMEAConf.message.append(0x01);             /* Message id */
+    msgNMEAConf.message.append(0x08);             /* Payload size */
+    msgNMEAConf.message.append((char)0x00);       /* Payload size */
+    msgNMEAConf.message.append((char)0x00);       /* msgClass */
+    msgNMEAConf.message.append((char)0x00);       /* msgID */
+    msgNMEAConf.message.append((char)0x00);       /* rate port 0 */
+    msgNMEAConf.message.append((char)0x00);       /* rate port 1 */
+    msgNMEAConf.message.append((char)0x00);       /* rate port 2 */
+    msgNMEAConf.message.append((char)0x00);       /* rate port 3 */
+    msgNMEAConf.message.append((char)0x00);       /* rate port 4 */
+    msgNMEAConf.message.append((char)0x00);       /* rate port 5 */
+
+
+    /* Message: DTM */
+    msgNMEAConf.message[4] = 0xF0;                /* msgClass */
+    msgNMEAConf.message[5] = 0x0A;                /* msgID */
+    addMessage(msgNMEAConf);
+
+    /* Message: GBQ */
+    msgNMEAConf.message[4] = 0xF0;                /* msgClass */
+    msgNMEAConf.message[5] = 0x44;                /* msgID */
+    addMessage(msgNMEAConf);
+
+    /* Message: GBS */
+    msgNMEAConf.message[4] = 0xF0;                /* msgClass */
+    msgNMEAConf.message[5] = 0x09;                /* msgID */
+    addMessage(msgNMEAConf);
+
+    /* Message: GLL */
+    msgNMEAConf.message[4] = 0xF0;                /* msgClass */
+    msgNMEAConf.message[5] = 0x01;                /* msgID */
+    addMessage(msgNMEAConf);
+
+    /* Message: GLQ */
+    msgNMEAConf.message[4] = 0xF0;                /* msgClass */
+    msgNMEAConf.message[5] = 0x43;                /* msgID */
+    addMessage(msgNMEAConf);
+
+    /* Message: GNQ */
+    msgNMEAConf.message[4] = 0xF0;                /* msgClass */
+    msgNMEAConf.message[5] = 0x42;                /* msgID */
+    addMessage(msgNMEAConf);
+
+    /* Message: GNS */
+    msgNMEAConf.message[4] = 0xF0;                /* msgClass */
+    msgNMEAConf.message[5] = 0x0D;                /* msgID */
+    addMessage(msgNMEAConf);
+
+    /* Message: GPQ */
+    msgNMEAConf.message[4] = 0xF0;                /* msgClass */
+    msgNMEAConf.message[5] = 0x40;                /* msgID */
+    addMessage(msgNMEAConf);
+
+    /* Message: GRS */
+    msgNMEAConf.message[4] = 0xF0;                /* msgClass */
+    msgNMEAConf.message[5] = 0x06;                /* msgID */
+    addMessage(msgNMEAConf);
+
+    /* Message: GSA */
+    msgNMEAConf.message[4] = 0xF0;                /* msgClass */
+    msgNMEAConf.message[5] = 0x02;                /* msgID */
+    addMessage(msgNMEAConf);
+
+    /* Message: GST */
+    msgNMEAConf.message[4] = 0xF0;                /* msgClass */
+    msgNMEAConf.message[5] = 0x07;                /* msgID */
+    addMessage(msgNMEAConf);
+
+    /* Message: GSV */
+    msgNMEAConf.message[4] = 0xF0;                /* msgClass */
+    msgNMEAConf.message[5] = 0x03;                /* msgID */
+    addMessage(msgNMEAConf);
+
+    /* Message: RMC */
+    msgNMEAConf.message[4] = 0xF0;                /* msgClass */
+    msgNMEAConf.message[5] = 0x04;                /* msgID */
+    addMessage(msgNMEAConf);
+
+    /* Message: THS */
+    msgNMEAConf.message[4] = 0xF0;                /* msgClass */
+    msgNMEAConf.message[5] = 0x0E;                /* msgID */
+    addMessage(msgNMEAConf);
+
+    /* Message: TXT */
+    msgNMEAConf.message[4] = 0xF0;                /* msgClass */
+    msgNMEAConf.message[5] = 0x41;                /* msgID */
+    addMessage(msgNMEAConf);
+
+    /* Message: VLW */
+    msgNMEAConf.message[4] = 0xF0;                /* msgClass */
+    msgNMEAConf.message[5] = 0x0F;                /* msgID */
+    addMessage(msgNMEAConf);
+
+    /* Message: VTG */
+    msgNMEAConf.message[4] = 0xF0;                /* msgClass */
+    msgNMEAConf.message[5] = 0x05;                /* msgID */
+    addMessage(msgNMEAConf);
+
+    /* Message: ZDA */
+    msgNMEAConf.message[4] = 0xF0;                /* msgClass */
+    msgNMEAConf.message[5] = 0x08;                /* msgID */
+    addMessage(msgNMEAConf);
+
+    UBXMessage msgGNSS;
+    msgGNSS.ack = false;
+    msgGNSS.message.append(0x0A);             /* Message class */
+    msgGNSS.message.append(0x28);             /* Message id */
+    msgGNSS.message.append((char)0x00);       /* Payload size */
+    msgGNSS.message.append((char)0x00);       /* Payload size */
+    addMessage(msgGNSS);
+
+    msgGNSS.message[0] = 0x06;
+    msgGNSS.message[1] = 0x3E;
+    addMessage(msgGNSS);
 }
 
 void UBX::requestSatelliteInfo()
@@ -234,7 +375,7 @@ void UBX::ack()
 {
     if (m_ackTimer->isActive()) {
         m_ackTimer->stop();
-        UBX_D("Ack received");
+        UBX_D("Ack/Nack received");
         m_ackQueue.message.clear();
         m_ackQueue.ack = false;
         sendNext();
@@ -247,9 +388,10 @@ void UBX::ackTimeout()
 {
     UBX_D("Ack timeout. Resending message");
     if (!m_ackQueue.message.isEmpty()) {
+        // Only try resend once
+        m_ackQueue.ack = false;
         m_sendQueue.prepend(m_ackQueue);
         m_ackQueue.message.clear();
-        m_ackQueue.ack = false;
         sendNext();
     }
 }

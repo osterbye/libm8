@@ -151,6 +151,9 @@ void M8Control::chipTimeout()
 
 void M8Control::setStatus(M8_STATUS status)
 {
+    if (M8_STATUS_ON == status)
+        m_ubx->configureNMEA();
+
     m_status = status;
     emit statusChange(m_status);
 }

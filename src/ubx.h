@@ -40,6 +40,7 @@ public:
 
     bool crcCheck(const QByteArray &msg);
     void parse(const QByteArray &msg);
+    void configureNMEA();
     void requestSatelliteInfo();
 
 public slots:
