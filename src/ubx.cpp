@@ -185,9 +185,9 @@ void UBX::parse(const QByteArray &msg)
             UBX_D("Antenna power:  " << QString::number(msg.at(25) & 0xFF).toLatin1());
         } else if (0x28 == msg.at(1)) {
             UBX_D("GNSS supported:\t\t" << QString::number(msg.at(5) & 0xFF).toLatin1());
-            UBX_D("GNSS default:\t\t" << QString::number(msg.at(5) & 0xFF).toLatin1());
-            UBX_D("GNSS enabled:\t\t" << QString::number(msg.at(5) & 0xFF).toLatin1());
-            UBX_D("GNSS simultaneous:\t" << QString::number(msg.at(5) & 0xFF).toLatin1());
+            UBX_D("GNSS default:\t\t" << QString::number(msg.at(6) & 0xFF).toLatin1());
+            UBX_D("GNSS enabled:\t\t" << QString::number(msg.at(7) & 0xFF).toLatin1());
+            UBX_D("GNSS simultaneous:\t" << QString::number(msg.at(8) & 0xFF).toLatin1());
         }
         break;
     default:
