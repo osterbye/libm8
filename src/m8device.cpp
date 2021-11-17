@@ -1,7 +1,7 @@
 /*
 MIT License
 
-Copyright (c) 2020 Nikolaj Due Osterbye
+Copyright (c) 2020-2021 Nikolaj Due Østerbye
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -36,21 +36,21 @@ SOFTWARE.
 #define MAX_WRITE_DATA 512
 #define MAX_READ_DATA 512
 
-M8Device::M8Device(QString device, QObject *parent) : QObject(parent)
+M8Device::M8Device(QString device, QObject *parent) : QObject(parent), m_socketNotifier(nullptr)
 {
     m_deviceFD = QT_OPEN(device.toUtf8().constData(), O_RDWR);
     if (m_deviceFD < 0) {
-        qWarning("libM8 could not open %s", device.toUtf8().constData());
+        qWarning("[M8Device] Could not open %s", device.toUtf8().constData());
     } else {
         m_socketNotifier = new QSocketNotifier(m_deviceFD, QSocketNotifier::Read, this);
-        connect(m_socketNotifier, SIGNAL(activated(int)), this, SLOT(readDeviceData()));
+        connect(m_socketNotifier, &QSocketNotifier::activated, this, &M8Device::readDeviceData);
     }
 }
 
 M8Device::~M8Device()
 {
     if (m_socketNotifier) {
-        disconnect(m_socketNotifier, SIGNAL(activated(int)), this, SLOT(readDeviceData()));
+        disconnect(m_socketNotifier, &QSocketNotifier::activated, this, &M8Device::readDeviceData);
         m_socketNotifier->deleteLater();
     }
 

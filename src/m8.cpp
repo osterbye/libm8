@@ -1,7 +1,7 @@
 /*
 MIT License
 
-Copyright (c) 2020 Nikolaj Due Osterbye
+Copyright (c) 2020-2021 Nikolaj Due Østerbye
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -27,12 +27,11 @@ SOFTWARE.
 M8::M8(QString device, QObject *parent) : QObject(parent)
 {
     m_control = new M8Control(device, this);
-    connect(m_control, SIGNAL(statusChange(M8_STATUS)), this, SIGNAL(statusChange(M8_STATUS)));
-    connect(m_control, SIGNAL(nmea(QByteArray)), this, SIGNAL(nmea(QByteArray)));
-    connect(m_control, SIGNAL(newPosition(double, double, float, quint8)), this,
-            SIGNAL(newPosition(double, double, float, quint8)));
-    connect(m_control, SIGNAL(systemTimeDrift(qint64)), this, SIGNAL(systemTimeDrift(qint64)));
-    connect(m_control, SIGNAL(satelliteInfo(M8_SV_INFO)), this, SIGNAL(satelliteInfo(M8_SV_INFO)));
+    connect(m_control, &M8Control::statusChange, this, &M8::statusChange);
+    connect(m_control, &M8Control::nmea, this, &M8::nmea);
+    connect(m_control, &M8Control::newPosition, this, &M8::newPosition);
+    connect(m_control, &M8Control::systemTimeDrift, this, &M8::systemTimeDrift);
+    connect(m_control, &M8Control::satelliteInfo, this, &M8::satelliteInfo);
 }
 
 M8_STATUS M8::status()

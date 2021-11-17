@@ -1,7 +1,7 @@
 /*
 MIT License
 
-Copyright (c) 2020 Nikolaj Due Osterbye
+Copyright (c) 2020-2021 Nikolaj Due Østerbye
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -43,8 +43,8 @@ UBX::UBX(M8Device *device, QObject *parent) : QObject(parent)
     m_ackTimer = new QTimer(this);
     m_ackTimer->setInterval(3000);
     m_ackTimer->setSingleShot(true);
-    connect(m_ackTimer, SIGNAL(timeout()), this, SLOT(ackTimeout()));
-    connect(this, SIGNAL(writeMessage(QByteArray)), device, SLOT(write(QByteArray)));
+    connect(m_ackTimer, &QTimer::timeout, this, &UBX::ackTimeout);
+    connect(this, &UBX::writeMessage, device, &M8Device::write);
 }
 
 bool UBX::crcCheck(const QByteArray &msg)
@@ -86,7 +86,7 @@ void UBX::parse(const QByteArray &msg)
                     } else {
                         UBX_D("Time not valid yet: " << QDateTime(d, t) << "\tt: " << t.isValid()
                                                      << ",\td: " << d.isValid());
-                        QTimer::singleShot(1000, this, SLOT(requestTime()));
+                        QTimer::singleShot(1000, this, &UBX::requestTime);
                     }
                 } else {
 #ifdef UBX_DEBUG
@@ -101,7 +101,7 @@ void UBX::parse(const QByteArray &msg)
                           << dt << "\t\tvalidity flags: "
                           << QString::number((uint)(msg.at(23) & 0xFF), 16).toLatin1());
 #endif
-                    QTimer::singleShot(1000, this, SLOT(requestTime()));
+                    QTimer::singleShot(1000, this, &UBX::requestTime);
                 }
             }
         } else if (0x35 == msg.at(1)) {
@@ -364,7 +364,7 @@ void UBX::sendNext()
                 m_ackQueue = ubxMessage;
                 m_ackTimer->start();
             } else {
-                QTimer::singleShot(10, this, SLOT(sendNext()));
+                QTimer::singleShot(10, this, &UBX::sendNext);
             }
         }
     }

@@ -1,7 +1,7 @@
 /*
 MIT License
 
-Copyright (c) 2020 Nikolaj Due Osterbye
+Copyright (c) 2020-2021 Nikolaj Due Østerbye
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -45,13 +45,12 @@ M8Control::M8Control(QString device, QObject *parent)
         m_m8Device->moveToThread(m_m8DeviceThread);
         m_m8DeviceThread->start();
         m_nmea = new NMEA(this);
-        connect(m_nmea, SIGNAL(newPosition(double, double, float, quint8)), this,
-                SIGNAL(newPosition(double, double, float, quint8)));
+        connect(m_nmea, &NMEA::newPosition, this, &M8Control::newPosition);
         m_ubx = new UBX(m_m8Device, this);
-        connect(m_ubx, SIGNAL(systemTimeDrift(qint64)), this, SIGNAL(systemTimeDrift(qint64)));
-        connect(m_ubx, SIGNAL(satelliteInfo(M8_SV_INFO)), this, SIGNAL(satelliteInfo(M8_SV_INFO)));
-        connect(m_m8Device, SIGNAL(data(QByteArray)), this, SLOT(deviceData(QByteArray)));
-        QTimer::singleShot(5000, this, SLOT(chipTimeout()));
+        connect(m_ubx, &UBX::systemTimeDrift, this, &M8Control::systemTimeDrift);
+        connect(m_ubx, &UBX::satelliteInfo, this, &M8Control::satelliteInfo);
+        connect(m_m8Device, &M8Device::data, this, &M8Control::deviceData);
+        QTimer::singleShot(5000, this, &M8Control::chipTimeout);
     } else {
         delete m_m8Device;
         setStatus(M8_STATUS_ERROR_DRIVER);
