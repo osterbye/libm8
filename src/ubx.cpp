@@ -71,7 +71,7 @@ void UBX::parse(const QByteArray &msg)
     case 0x01:
         if (0x21 == msg.at(1)) {
             if ((msg.size() >= 24)) {
-                if (((msg.at(23) & 0x04) > 0)) {
+                if (((msg.at(23) & 0x04) > 0) || ((msg.at(23) & 0x03) == 0x03)) {
                     QTime t(msg.at(20) & 0xFF, msg.at(21) & 0xFF, msg.at(22) & 0xFF,
                             (static_cast<qint32>((msg.at(12) & 0xFF) | ((msg.at(13) & 0xFF) << 8)
                                                  | ((msg.at(14) & 0xFF) << 16)
