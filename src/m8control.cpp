@@ -24,7 +24,9 @@ SOFTWARE.
 #include "m8control.h"
 #include "m8device.h"
 #include "assistance.h"
+#include "config.h"
 #include "nmea.h"
+#include "power.h"
 #include "ubx.h"
 #include <QThread>
 #include <QTimer>
@@ -50,9 +52,12 @@ M8Control::M8Control(QString device, QByteArray configPath, QObject *parent)
         m_ubx = new UBX(m_m8Device, this);
         connect(m_ubx, &UBX::systemTimeDrift, this, &M8Control::systemTimeDrift);
         connect(m_ubx, &UBX::satelliteInfo, this, &M8Control::satelliteInfo);
+        m_config = new Config(configPath, this);
+        m_power = new Power(this);
+        m_assistance = new Assistance(m_ubx, m_config, this);
+
         connect(m_m8Device, &M8Device::data, this, &M8Control::deviceData);
         QTimer::singleShot(5000, this, &M8Control::chipTimeout);
-        m_assistance = new Assistance(configPath, m_ubx, this);
     } else {
         delete m_m8Device;
         setStatus(M8_STATUS_ERROR_DRIVER);
@@ -130,8 +135,8 @@ void M8Control::deviceData(QByteArray ba)
                         M8C_D("Incomplete ubx message. Wait for more data.");
                         break;
                     }
+                    m_chipConfirmationDone = true;
                 }
-                m_chipConfirmationDone = true;
             } else {
                 M8C_D("Incomplete ubx message. Wait for more data.");
                 break;

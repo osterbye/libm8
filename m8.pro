@@ -24,7 +24,9 @@ SOURCES += \
     src/m8device.cpp \
     src/nmea.cpp \
     src/ubx.cpp \
-    src/assistance.cpp
+    src/assistance.cpp \
+    src/config.cpp \
+    src/power.cpp
 
 HEADERS += \
     src/m8control.h \
@@ -32,7 +34,9 @@ HEADERS += \
     src/nmea.h \
     src/ubx.h \
     src/ubxmessage.h \
-    src/assistance.h
+    src/assistance.h \
+    src/config.h \
+    src/power.h
 
 
 DESTDIR = $$_PRO_FILE_PWD_/bin/

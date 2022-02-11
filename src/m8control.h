@@ -29,8 +29,10 @@ SOFTWARE.
 #include "m8_sv_info.h"
 
 class Assistance;
+class Config;
 class M8Device;
 class NMEA;
+class Power;
 class QThread;
 class UBX;
 
@@ -65,6 +67,8 @@ private:
     M8_STATUS m_status;
     QByteArray m_input;
     Assistance *m_assistance;
+    Config *m_config;
+    Power *m_power;
     NMEA *m_nmea;
     bool m_chipConfirmationDone;
     UBX *m_ubx;

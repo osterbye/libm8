@@ -42,6 +42,7 @@ public:
     void parse(const QByteArray &msg);
     void configureNMEA();
     void injectTimeAssistance();
+    void setPowerSave(bool on);
     void requestSatelliteInfo();
 
 public slots:

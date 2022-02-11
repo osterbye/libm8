@@ -357,6 +357,39 @@ void UBX::injectTimeAssistance()
     addMessage(msgIniTime, true);
 }
 
+void UBX::setPowerSave(bool on)
+{
+    quint8 mode = 0;
+    if (on) {
+        mode = 1;
+        UBXMessage msgPMS;
+        msgPMS.ack = false;
+        msgPMS.message.append(0x06); /* Message class */
+        msgPMS.message.append(0x86); /* Message id */
+        msgPMS.message.append(0x08); /* Payload size */
+        msgPMS.message.append(static_cast<char>(0x00)); /* Payload size */
+        msgPMS.message.append(static_cast<char>(0x00)); /* Message version */
+        msgPMS.message.append(0x03); /* Aggressive with 1Hz */
+        msgPMS.message.append(static_cast<char>(0x00)); /* Period, for interval mode */
+        msgPMS.message.append(static_cast<char>(0x00)); /* Period, for interval mode */
+        msgPMS.message.append(static_cast<char>(0x00)); /* onTime, for interval mode */
+        msgPMS.message.append(static_cast<char>(0x00)); /* onTime, for interval mode */
+        msgPMS.message.append(static_cast<char>(0x00)); /* Reserved1 */
+        msgPMS.message.append(static_cast<char>(0x00)); /* Reserved1 */
+        addMessage(msgPMS);
+    }
+
+    UBXMessage msgRXM;
+    msgRXM.ack = false;
+    msgRXM.message.append(0x06); /* Message class */
+    msgRXM.message.append(0x11); /* Message id */
+    msgRXM.message.append(0x02); /* Payload size */
+    msgRXM.message.append(static_cast<char>(0x00)); /* Payload size */
+    msgRXM.message.append(static_cast<char>(0x00)); /* Reserved1 */
+    msgRXM.message.append(mode); /* lpMode */
+    addMessage(msgRXM);
+}
+
 void UBX::requestSatelliteInfo()
 {
     UBXMessage msgReqSvInfo;

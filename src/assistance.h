@@ -25,14 +25,7 @@ SOFTWARE.
 #define ASSISTANCE_H
 
 #include <QObject>
-
-typedef enum {
-    ASSIST_OFF,
-    ASSIST_BASIC,
-    ASSIST_AUTONOMOUS,
-    ASSIST_OFFLINE, /* Not supported yet */
-    ASSIST_ONLINE /* Not supported yet */
-} assist_lvl_t;
+#include "config.h"
 
 class UBX;
 
@@ -40,14 +33,7 @@ class Assistance : public QObject
 {
     Q_OBJECT
 public:
-    explicit Assistance(QByteArray configPath, UBX *ubx, QObject *parent = nullptr);
-
-private:
-    void readConfig(QByteArray configPath);
-
-private:
-    assist_lvl_t m_assistLevel;
-    QByteArray m_offlineDirectory;
+    explicit Assistance(UBX *ubx, Config *cfg, QObject *parent = nullptr);
 };
 
 #endif // ASSISTANCE_H
