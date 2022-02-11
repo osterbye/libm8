@@ -1,7 +1,7 @@
 /*
 MIT License
 
-Copyright (c) 2020-2021 Nikolaj Due Østerbye
+Copyright (c) 2020-2022 Nikolaj Due Østerbye
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -41,6 +41,7 @@ public:
     bool crcCheck(const QByteArray &msg);
     void parse(const QByteArray &msg);
     void configureNMEA();
+    void injectTimeAssistance();
     void requestSatelliteInfo();
 
 public slots:
@@ -52,7 +53,7 @@ signals:
     void writeMessage(const QByteArray &msg);
 
 private slots:
-    void addMessage(UBXMessage message);
+    void addMessage(UBXMessage message, bool priority = false);
     void sendNext();
     void encodeAndSend(const QByteArray &message);
     void ack();

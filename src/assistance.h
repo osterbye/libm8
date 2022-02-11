@@ -21,53 +21,33 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
-#ifndef M8CONTROL_H
-#define M8CONTROL_H
+#ifndef ASSISTANCE_H
+#define ASSISTANCE_H
 
 #include <QObject>
-#include "m8_status.h"
-#include "m8_sv_info.h"
 
-class Assistance;
-class M8Device;
-class NMEA;
-class QThread;
+typedef enum {
+    ASSIST_OFF,
+    ASSIST_BASIC,
+    ASSIST_AUTONOMOUS,
+    ASSIST_OFFLINE, /* Not supported yet */
+    ASSIST_ONLINE /* Not supported yet */
+} assist_lvl_t;
+
 class UBX;
 
-class M8Control : public QObject
+class Assistance : public QObject
 {
     Q_OBJECT
 public:
-    explicit M8Control(QString device, QByteArray configPath, QObject *parent = nullptr);
-    ~M8Control();
-
-    M8_STATUS status();
-    void requestTime();
-    void requestSatelliteInfo();
-
-signals:
-    void statusChange(M8_STATUS status);
-    void nmea(const QByteArray &nmea);
-    void newPosition(double latitude, double longitude, float altitude, quint8 satellites);
-    void systemTimeDrift(qint64 offsetMilliseconds);
-    void satelliteInfo(M8_SV_INFO info);
-
-private slots:
-    void deviceData(QByteArray ba);
-    void chipTimeout();
+    explicit Assistance(QByteArray configPath, UBX *ubx, QObject *parent = nullptr);
 
 private:
-    void setStatus(M8_STATUS status);
+    void readConfig(QByteArray configPath);
 
 private:
-    M8Device *m_m8Device;
-    QThread *m_m8DeviceThread;
-    M8_STATUS m_status;
-    QByteArray m_input;
-    Assistance *m_assistance;
-    NMEA *m_nmea;
-    bool m_chipConfirmationDone;
-    UBX *m_ubx;
+    assist_lvl_t m_assistLevel;
+    QByteArray m_offlineDirectory;
 };
 
-#endif // M8CONTROL_H
+#endif // ASSISTANCE_H

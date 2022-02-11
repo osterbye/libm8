@@ -1,6 +1,6 @@
 QT -= gui
 
-VERSION = 0.1.4
+VERSION = 0.2.0
 TEMPLATE = lib
 DEFINES += M8_LIBRARY
 
@@ -23,14 +23,16 @@ SOURCES += \
     src/m8control.cpp \
     src/m8device.cpp \
     src/nmea.cpp \
-    src/ubx.cpp
+    src/ubx.cpp \
+    src/assistance.cpp
 
 HEADERS += \
     src/m8control.h \
     src/m8device.h \
     src/nmea.h \
     src/ubx.h \
-    src/ubxmessage.h
+    src/ubxmessage.h \
+    src/assistance.h
 
 
 DESTDIR = $$_PRO_FILE_PWD_/bin/

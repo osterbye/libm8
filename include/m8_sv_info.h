@@ -1,7 +1,7 @@
 /*
 MIT License
 
-Copyright (c) 2020 Nikolaj Due Osterbye
+Copyright (c) 2020-2022 Nikolaj Due Østerbye
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -44,7 +44,7 @@ struct M8_SV {
  * @brief UBX-NAV-SAT tracked satellites information
  */
 struct M8_SV_INFO {
-    quint32 iTOW; /*GPS time of week of the navigation epoch. [ms]  */
+    quint32 iTOW; /* GPS time of week of the navigation epoch. [ms]  */
     quint8 version; /* Message version */
     quint8 numSvs; /* Number of satellites */
     QList<M8_SV> satellites;

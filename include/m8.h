@@ -1,7 +1,7 @@
 /*
 MIT License
 
-Copyright (c) 2020 Nikolaj Due Osterbye
+Copyright (c) 2020-2022 Nikolaj Due Østerbye
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -36,6 +36,7 @@ class M8_EXPORT M8 : public QObject
     Q_OBJECT
 public:
     M8(QString device, QObject *parent = nullptr);
+    M8(QString device, QByteArray configPath, QObject *parent = nullptr);
 
     M8_STATUS status();
     void requestTime();

@@ -1,7 +1,7 @@
 /*
 MIT License
 
-Copyright (c) 2020-2021 Nikolaj Due Østerbye
+Copyright (c) 2020-2022 Nikolaj Due Østerbye
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -321,6 +321,42 @@ void UBX::configureNMEA()
 #endif
 }
 
+void UBX::injectTimeAssistance()
+{
+    UBXMessage msgIniTime;
+    msgIniTime.ack = false;
+    msgIniTime.message.append(0x13); /* Message class */
+    msgIniTime.message.append(0x40); /* Message id */
+    msgIniTime.message.append(static_cast<char>(0x18)); /* Payload size */
+    msgIniTime.message.append(static_cast<char>(0x00)); /* Payload size */
+    msgIniTime.message.append(0x10); /* Message type */
+    msgIniTime.message.append(static_cast<char>(0x00)); /* Message version */
+    msgIniTime.message.append(static_cast<char>(0x00)); /* Source (0: on receipt of message) */
+    msgIniTime.message.append(0x80); /* Leap seconds since 1980 (or 0x80 = -128 if unknown) */
+    QDateTime now = QDateTime::currentDateTimeUtc();
+    msgIniTime.message.append(now.date().year() & 0xFF); /* Year */
+    msgIniTime.message.append((now.date().year() >> 8) & 0xFF); /* Year */
+    msgIniTime.message.append(now.date().month() & 0xFF); /* Month */
+    msgIniTime.message.append(now.date().day() & 0xFF); /* Day */
+    msgIniTime.message.append(now.time().hour() & 0xFF); /* Hour */
+    msgIniTime.message.append(now.time().minute() & 0xFF); /* Minute */
+    msgIniTime.message.append(now.time().second() & 0xFF); /* Seconds */
+    msgIniTime.message.append(static_cast<char>(0x00)); /* Reserved1 */
+    msgIniTime.message.append(static_cast<char>(0x00)); /* Nanoseconds */
+    msgIniTime.message.append(static_cast<char>(0x00)); /* Nanoseconds */
+    msgIniTime.message.append(static_cast<char>(0x00)); /* Nanoseconds */
+    msgIniTime.message.append(static_cast<char>(0x00)); /* Nanoseconds */
+    msgIniTime.message.append(0x10); /* Seconds part of time accuracy */
+    msgIniTime.message.append(static_cast<char>(0x00)); /* Seconds part of time accuracy */
+    msgIniTime.message.append(static_cast<char>(0x00)); /* Reserved2 */
+    msgIniTime.message.append(static_cast<char>(0x00)); /* Reserved2 */
+    msgIniTime.message.append(static_cast<char>(0x00)); /* Nanoseconds part of time accuracy */
+    msgIniTime.message.append(static_cast<char>(0x00)); /* Nanoseconds part of time accuracy */
+    msgIniTime.message.append(static_cast<char>(0x00)); /* Nanoseconds part of time accuracy */
+    msgIniTime.message.append(static_cast<char>(0x00)); /* Nanoseconds part of time accuracy */
+    addMessage(msgIniTime, true);
+}
+
 void UBX::requestSatelliteInfo()
 {
     UBXMessage msgReqSvInfo;
@@ -343,9 +379,13 @@ void UBX::requestTime()
     addMessage(msgReqTime);
 }
 
-void UBX::addMessage(UBXMessage message)
+void UBX::addMessage(UBXMessage message, bool priority)
 {
-    m_sendQueue.append(message);
+    if (priority) {
+        m_sendQueue.prepend(message);
+    } else {
+        m_sendQueue.append(message);
+    }
     sendNext();
 }
 

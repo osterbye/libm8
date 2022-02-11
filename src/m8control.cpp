@@ -1,7 +1,7 @@
 /*
 MIT License
 
-Copyright (c) 2020-2021 Nikolaj Due Østerbye
+Copyright (c) 2020-2022 Nikolaj Due Østerbye
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -23,6 +23,7 @@ SOFTWARE.
 */
 #include "m8control.h"
 #include "m8device.h"
+#include "assistance.h"
 #include "nmea.h"
 #include "ubx.h"
 #include <QThread>
@@ -36,7 +37,7 @@ SOFTWARE.
 #define M8C_D(x)
 #endif
 
-M8Control::M8Control(QString device, QObject *parent)
+M8Control::M8Control(QString device, QByteArray configPath, QObject *parent)
     : QObject(parent), m_status(M8_STATUS_INITIALIZING), m_chipConfirmationDone(false)
 {
     m_m8Device = new M8Device(device);
@@ -51,6 +52,7 @@ M8Control::M8Control(QString device, QObject *parent)
         connect(m_ubx, &UBX::satelliteInfo, this, &M8Control::satelliteInfo);
         connect(m_m8Device, &M8Device::data, this, &M8Control::deviceData);
         QTimer::singleShot(5000, this, &M8Control::chipTimeout);
+        m_assistance = new Assistance(configPath, m_ubx, this);
     } else {
         delete m_m8Device;
         setStatus(M8_STATUS_ERROR_DRIVER);
