@@ -35,7 +35,7 @@ SOFTWARE.
 #define UBX_D(x)
 #endif
 
-UBX::UBX(M8Device *device, QObject *parent) : QObject(parent)
+UBX::UBX(M8Device *device, QObject *parent) : QObject(parent), m_autonomousAssist(false)
 {
     UBX_D("constructor");
     m_ackQueue.message.clear();
@@ -145,7 +145,16 @@ void UBX::parse(const QByteArray &msg)
         }
         break;
     case 0x06:
-        if (0x3E == msg.at(1)) {
+        if (0x23 == msg.at(1)) {
+            UBX_D("UBX-CFG-NAVX5");
+            int payloadLen = msg.at(2) | (msg.at(3) << 8);
+            if (msg.size() >= (payloadLen + 6)) {
+                m_UbxCfgNavx5 = msg.mid(4, payloadLen);
+                setAutonomousAssist(m_autonomousAssist);
+            } else {
+                UBX_D("Error: wrong message size for UBX-CFG-NAVX5");
+            }
+        } else if (0x3E == msg.at(1)) {
 #ifdef UBX_DEBUG
             UBX_D("GNSS configuration:");
             UBX_D("Version:\t\t" << QString::number(msg.at(4) & 0xFF).toLatin1());
@@ -404,6 +413,31 @@ void UBX::setPowerSave(bool on)
     msgRXM.message.append(static_cast<char>(0x00)); /* Reserved1 */
     msgRXM.message.append(mode); /* lpMode */
     addMessage(msgRXM);
+}
+
+void UBX::setAutonomousAssist(bool enabled)
+{
+    m_autonomousAssist = enabled;
+    if (m_UbxCfgNavx5.isEmpty()) {
+        UBXMessage msgReqNavx5;
+        msgReqNavx5.ack = false;
+        msgReqNavx5.message.append(0x06); /* Message class */
+        msgReqNavx5.message.append(0x23); /* Message id */
+        msgReqNavx5.message.append(static_cast<char>(0x00)); /* Payload size */
+        msgReqNavx5.message.append(static_cast<char>(0x00)); /* Payload size */
+        addMessage(msgReqNavx5);
+    } else {
+        m_UbxCfgNavx5[27] = (enabled) ? 0x01 : 0x00;
+        int payloadLen = m_UbxCfgNavx5.length();
+        UBXMessage msgSetNavx5;
+        msgSetNavx5.ack = false;
+        msgSetNavx5.message.append(0x06); /* Message class */
+        msgSetNavx5.message.append(0x23); /* Message id */
+        msgSetNavx5.message.append(static_cast<char>(payloadLen)); /* Payload size */
+        msgSetNavx5.message.append(static_cast<char>(0x00)); /* Payload size */
+        msgSetNavx5.message.append(m_UbxCfgNavx5);
+        addMessage(msgSetNavx5);
+    }
 }
 
 void UBX::requestSatelliteInfo()

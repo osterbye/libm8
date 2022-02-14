@@ -44,6 +44,7 @@ public:
     void injectTimeAssistance();
     void setEngineState(bool on);
     void setPowerSave(bool on);
+    void setAutonomousAssist(bool enabled);
     void requestSatelliteInfo();
 
 public slots:
@@ -65,6 +66,8 @@ private:
     UBXMessage m_ackQueue;
     QList<UBXMessage> m_sendQueue;
     QTimer *m_ackTimer;
+    QByteArray m_UbxCfgNavx5;
+    bool m_autonomousAssist;
 };
 
 #endif // UBX_H

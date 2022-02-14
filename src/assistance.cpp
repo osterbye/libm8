@@ -39,4 +39,7 @@ Assistance::Assistance(UBX *ubx, Config *cfg, QObject *parent) : QObject(parent)
 {
     if (cfg->assistLevel() > ASSIST_OFF && QDateTime::currentMSecsSinceEpoch() > JAN_1_2022)
         ubx->injectTimeAssistance();
+
+    if (ASSIST_AUTONOMOUS == cfg->assistLevel())
+        ubx->setAutonomousAssist(true);
 }
