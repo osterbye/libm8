@@ -53,7 +53,7 @@ M8Control::M8Control(QString device, QByteArray configPath, QObject *parent)
         connect(m_ubx, &UBX::systemTimeDrift, this, &M8Control::systemTimeDrift);
         connect(m_ubx, &UBX::satelliteInfo, this, &M8Control::satelliteInfo);
         m_config = new Config(configPath, this);
-        m_power = new Power(this);
+        m_power = new Power(m_nmea, m_ubx, m_config, this);
         m_assistance = new Assistance(m_ubx, m_config, this);
 
         connect(m_m8Device, &M8Device::data, this, &M8Control::deviceData);
@@ -72,6 +72,11 @@ M8Control::~M8Control()
         m_m8DeviceThread->deleteLater();
         delete m_m8Device;
     }
+}
+
+void M8Control::setPower(bool on)
+{
+    m_power->setPower(on);
 }
 
 M8_STATUS M8Control::status()

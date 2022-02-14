@@ -38,6 +38,7 @@ public:
     M8(QString device, QObject *parent = nullptr);
     M8(QString device, QByteArray configPath, QObject *parent = nullptr);
 
+    void setPower(bool on);
     M8_STATUS status();
     void requestTime();
     void requestSatelliteInfo();

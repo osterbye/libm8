@@ -21,7 +21,8 @@ private slots:
 private:
     UBX *p_ubx;
     Config *p_config;
-
+    bool m_gnssActiveRequested;
+    bool m_psmActive;
 };
 
 #endif // POWER_H

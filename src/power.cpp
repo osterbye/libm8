@@ -3,19 +3,19 @@
 #include "nmea.h"
 #include "ubx.h"
 
-Power::Power(NMEA *nmea, UBX *ubx, Config *cfg, QObject *parent) : QObject(parent), p_ubx(ubx), p_config(cfg)
+Power::Power(NMEA *nmea, UBX *ubx, Config *cfg, QObject *parent)
+    : QObject(parent), p_ubx(ubx), p_config(cfg), m_gnssActiveRequested(true), m_psmActive(false)
 {
     if (cfg->powerSave())
         connect(nmea, &NMEA::newPosition, this, &Power::newPosition);
-
 }
 
 void Power::setPower(bool on)
 {
-/*
-UBX-CFG-RST
-    - Controlled GNSS start/stop
-*/
+    if (on != m_gnssActiveRequested) {
+        p_ubx->setEngineState(on);
+        m_gnssActiveRequested = on;
+    }
 }
 
 void Power::newPosition(double latitude, double longitude, float altitude, quint8 satellites)
@@ -24,6 +24,11 @@ void Power::newPosition(double latitude, double longitude, float altitude, quint
     Q_UNUSED(longitude)
     Q_UNUSED(altitude)
 
-    if (satellites >= 4)
+    if (!m_psmActive && satellites >= 10) {
+        m_psmActive = true;
         p_ubx->setPowerSave(true);
+    } else if (m_psmActive && satellites <= 6) {
+        m_psmActive = false;
+        p_ubx->setPowerSave(false);
+    }
 }

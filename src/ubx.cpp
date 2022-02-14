@@ -357,6 +357,22 @@ void UBX::injectTimeAssistance()
     addMessage(msgIniTime, true);
 }
 
+void UBX::setEngineState(bool on)
+{
+    quint8 mode = (on) ? 0x09 : 0x08;
+    UBXMessage msgRST;
+    msgRST.ack = false;
+    msgRST.message.append(0x06); /* Message class */
+    msgRST.message.append(0x04); /* Message id */
+    msgRST.message.append(0x04); /* Payload size */
+    msgRST.message.append(static_cast<char>(0x00)); /* Payload size */
+    msgRST.message.append(static_cast<char>(0x00)); /* navBbrMask */
+    msgRST.message.append(static_cast<char>(0x00)); /* navBbrMask */
+    msgRST.message.append(mode); /* resetMode */
+    msgRST.message.append(static_cast<char>(0x00)); /* Reserved1 */
+    addMessage(msgRST);
+}
+
 void UBX::setPowerSave(bool on)
 {
     quint8 mode = 0;

@@ -43,6 +43,7 @@ public:
     explicit M8Control(QString device, QByteArray configPath, QObject *parent = nullptr);
     ~M8Control();
 
+    void setPower(bool on);
     M8_STATUS status();
     void requestTime();
     void requestSatelliteInfo();

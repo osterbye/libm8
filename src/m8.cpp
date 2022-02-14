@@ -39,6 +39,11 @@ M8::M8(QString device, QByteArray configPath, QObject *parent) : QObject(parent)
     connect(m_control, &M8Control::satelliteInfo, this, &M8::satelliteInfo);
 }
 
+void M8::setPower(bool on)
+{
+    m_control->setPower(on);
+}
+
 M8_STATUS M8::status()
 {
     return m_control->status();
