@@ -34,6 +34,7 @@ class M8Device;
 class NMEA;
 class Power;
 class QThread;
+class QTimer;
 class UBX;
 
 class M8Control : public QObject
@@ -66,6 +67,7 @@ private:
     M8Device *m_m8Device;
     QThread *m_m8DeviceThread;
     M8_STATUS m_status;
+    QTimer *m_statusTimer;
     QByteArray m_input;
     Assistance *m_assistance;
     Config *m_config;

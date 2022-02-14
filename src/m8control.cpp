@@ -55,9 +55,12 @@ M8Control::M8Control(QString device, QByteArray configPath, QObject *parent)
         m_config = new Config(configPath, this);
         m_power = new Power(m_nmea, m_ubx, m_config, this);
         m_assistance = new Assistance(m_ubx, m_config, this);
+        m_statusTimer = new QTimer(this);
+        m_statusTimer->setInterval(3000);
+        connect(m_statusTimer, &QTimer::timeout, this, &M8Control::chipTimeout);
 
         connect(m_m8Device, &M8Device::data, this, &M8Control::deviceData);
-        QTimer::singleShot(5000, this, &M8Control::chipTimeout);
+        m_statusTimer->start();
     } else {
         delete m_m8Device;
         setStatus(M8_STATUS_ERROR_DRIVER);
@@ -116,9 +119,7 @@ void M8Control::deviceData(QByteArray ba)
                     M8C_D("NMEA checksum error: " << nmeaStr);
                 }
                 m_input.remove(0, nmeaEnd);
-                m_chipConfirmationDone = true;
-                if (M8_STATUS_ON != m_status)
-                    setStatus(M8_STATUS_ON);
+                setStatus(M8_STATUS_ON);
             } else {
                 M8C_D("Incomplete nmea string. Wait for more data. " << m_input);
                 break;
@@ -140,7 +141,7 @@ void M8Control::deviceData(QByteArray ba)
                         M8C_D("Incomplete ubx message. Wait for more data.");
                         break;
                     }
-                    m_chipConfirmationDone = true;
+                    setStatus(M8_STATUS_ON);
                 }
             } else {
                 M8C_D("Incomplete ubx message. Wait for more data.");
@@ -154,17 +155,19 @@ void M8Control::deviceData(QByteArray ba)
 
 void M8Control::chipTimeout()
 {
-    if (!m_chipConfirmationDone)
-        setStatus(M8_STATUS_ERROR_CHIP);
-
-    m_chipConfirmationDone = true;
+    M8_STATUS status = (m_chipConfirmationDone) ? M8_STATUS_OFF : M8_STATUS_ERROR_CHIP;
+    setStatus(status);
 }
 
 void M8Control::setStatus(M8_STATUS status)
 {
-    if (M8_STATUS_ON != m_status && M8_STATUS_ON == status)
-        m_ubx->configureNMEA();
+    if (status != m_status) {
+        if (M8_STATUS_ON == status) {
+            m_ubx->configureNMEA();
+            m_chipConfirmationDone = true;
+        }
 
-    m_status = status;
-    emit statusChange(m_status);
+        m_status = status;
+        emit statusChange(m_status);
+    }
 }
