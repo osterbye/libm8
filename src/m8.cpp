@@ -44,6 +44,11 @@ void M8::setPower(bool on)
     m_control->setPower(on);
 }
 
+void M8::saveAutonomousAssistData()
+{
+    m_control->saveAutonomousAssistData();
+}
+
 M8_STATUS M8::status()
 {
     return m_control->status();

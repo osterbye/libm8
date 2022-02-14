@@ -55,6 +55,7 @@ M8Control::M8Control(QString device, QByteArray configPath, QObject *parent)
         m_config = new Config(configPath, this);
         m_power = new Power(m_nmea, m_ubx, m_config, this);
         m_assistance = new Assistance(m_ubx, m_config, this);
+        connect(m_ubx, &UBX::saveNavigationEntry, m_assistance, &Assistance::saveNavigationEntry);
         m_statusTimer = new QTimer(this);
         m_statusTimer->setInterval(3000);
         connect(m_statusTimer, &QTimer::timeout, this, &M8Control::chipTimeout);
@@ -80,6 +81,11 @@ M8Control::~M8Control()
 void M8Control::setPower(bool on)
 {
     m_power->setPower(on);
+}
+
+void M8Control::saveAutonomousAssistData()
+{
+    m_assistance->saveAutonomousAssistData();
 }
 
 M8_STATUS M8Control::status()

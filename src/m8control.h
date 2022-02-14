@@ -45,6 +45,7 @@ public:
     ~M8Control();
 
     void setPower(bool on);
+    void saveAutonomousAssistData();
     M8_STATUS status();
     void requestTime();
     void requestSatelliteInfo();

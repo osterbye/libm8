@@ -46,6 +46,7 @@ public:
     void setPowerSave(bool on);
     void setAutonomousAssist(bool enabled);
     void requestSatelliteInfo();
+    void requestNavigationDatabase();
 
 public slots:
     void requestTime();
@@ -54,6 +55,7 @@ signals:
     void systemTimeDrift(qint64 offsetMilliseconds);
     void satelliteInfo(M8_SV_INFO info);
     void writeMessage(const QByteArray &msg);
+    void saveNavigationEntry(QByteArray entry);
 
 private slots:
     void addMessage(UBXMessage message, bool priority = false);

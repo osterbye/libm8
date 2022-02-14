@@ -22,8 +22,12 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 #include "assistance.h"
+#include "config.h"
 #include "ubx.h"
 #include <QDateTime>
+#include <QDir>
+#include <QStringBuilder>
+#include <QStringList>
 
 #define ASST_DEBUG
 #ifdef ASST_DEBUG
@@ -35,11 +39,37 @@ SOFTWARE.
 
 #define JAN_1_2022 1640995200000LL
 
-Assistance::Assistance(UBX *ubx, Config *cfg, QObject *parent) : QObject(parent)
+Assistance::Assistance(UBX *ubx, Config *cfg, QObject *parent)
+    : QObject(parent), p_cfg(cfg), p_ubx(ubx), m_entryNumber(0)
 {
     if (cfg->assistLevel() > ASSIST_OFF && QDateTime::currentMSecsSinceEpoch() > JAN_1_2022)
         ubx->injectTimeAssistance();
 
     if (ASSIST_AUTONOMOUS == cfg->assistLevel())
         ubx->setAutonomousAssist(true);
+}
+
+void Assistance::saveAutonomousAssistData()
+{
+    if (!p_cfg->offlineDir().isEmpty()) {
+        m_entryNumber = 0;
+        p_ubx->requestNavigationDatabase();
+    }
+}
+
+void Assistance::saveNavigationEntry(QByteArray entry)
+{
+    if (0 == m_entryNumber) {
+        QDir d(p_cfg->offlineDir(), { "*.dbd" });
+        for (QString &filename : d.entryList()) {
+            d.remove(filename);
+        }
+    }
+
+    QFile f(p_cfg->offlineDir() % "mga" % QString::number(m_entryNumber) % ".dbd");
+    if (f.open(QIODevice::WriteOnly | QIODevice::Truncate)) {
+        f.write(entry);
+        f.close();
+    }
+    ++m_entryNumber;
 }

@@ -39,6 +39,7 @@ public:
     M8(QString device, QByteArray configPath, QObject *parent = nullptr);
 
     void setPower(bool on);
+    void saveAutonomousAssistData();
     M8_STATUS status();
     void requestTime();
     void requestSatelliteInfo();

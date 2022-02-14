@@ -199,6 +199,17 @@ void UBX::parse(const QByteArray &msg)
             UBX_D("GNSS simultaneous:\t" << QString::number(msg.at(8) & 0xFF).toLatin1());
         }
         break;
+    case 0x13:
+        if (static_cast<char>(0x80) == msg.at(1)) {
+            UBX_D("UBX-MGA-DBD");
+            int payloadLen = msg.at(2) | (msg.at(3) << 8);
+            if (msg.size() >= (payloadLen + 6)) {
+                emit saveNavigationEntry(msg.mid(4, payloadLen));
+            } else {
+                UBX_D("Error: wrong message size for UBX-MGA-DBD");
+            }
+        }
+        break;
     default:
         UBX_D("Unknown response class: " << QString::number(msg.at(0)).toLatin1());
         break;
@@ -449,6 +460,17 @@ void UBX::requestSatelliteInfo()
     msgReqSvInfo.message.append(static_cast<char>(0x00)); /* Payload size */
     msgReqSvInfo.message.append(static_cast<char>(0x00)); /* Payload size */
     addMessage(msgReqSvInfo);
+}
+
+void UBX::requestNavigationDatabase()
+{
+    UBXMessage msgReqMgaDbd;
+    msgReqMgaDbd.ack = false;
+    msgReqMgaDbd.message.append(0x13); /* Message class */
+    msgReqMgaDbd.message.append(0x80); /* Message id */
+    msgReqMgaDbd.message.append(static_cast<char>(0x00)); /* Payload size */
+    msgReqMgaDbd.message.append(static_cast<char>(0x00)); /* Payload size */
+    addMessage(msgReqMgaDbd);
 }
 
 void UBX::requestTime()

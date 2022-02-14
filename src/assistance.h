@@ -25,8 +25,8 @@ SOFTWARE.
 #define ASSISTANCE_H
 
 #include <QObject>
-#include "config.h"
 
+class Config;
 class UBX;
 
 class Assistance : public QObject
@@ -34,6 +34,16 @@ class Assistance : public QObject
     Q_OBJECT
 public:
     explicit Assistance(UBX *ubx, Config *cfg, QObject *parent = nullptr);
+
+    void saveAutonomousAssistData();
+
+public slots:
+    void saveNavigationEntry(QByteArray entry);
+
+private:
+    Config *p_cfg;
+    UBX *p_ubx;
+    int m_entryNumber;
 };
 
 #endif // ASSISTANCE_H
