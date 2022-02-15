@@ -41,12 +41,12 @@ public:
     explicit Config(QByteArray configPath, QObject *parent = nullptr);
 
     ASSIST_LEVEL assistLevel();
-    QByteArray offlineDir();
+    QString offlineDir();
     bool powerSave();
 
 private:
     ASSIST_LEVEL m_assistLevel;
-    QByteArray m_offlineDirectory;
+    QString m_offlineDirectory;
     bool m_powerSave;
 };
 

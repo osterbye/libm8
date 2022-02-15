@@ -444,8 +444,8 @@ void UBX::setAutonomousAssist(bool enabled)
         msgSetNavx5.ack = false;
         msgSetNavx5.message.append(0x06); /* Message class */
         msgSetNavx5.message.append(0x23); /* Message id */
-        msgSetNavx5.message.append(static_cast<char>(payloadLen)); /* Payload size */
-        msgSetNavx5.message.append(static_cast<char>(0x00)); /* Payload size */
+        msgSetNavx5.message.append(payloadLen & 0xFF); /* Payload size */
+        msgSetNavx5.message.append((payloadLen >> 8) & 0xFF); /* Payload size */
         msgSetNavx5.message.append(m_UbxCfgNavx5);
         addMessage(msgSetNavx5);
     }
@@ -471,6 +471,18 @@ void UBX::requestNavigationDatabase()
     msgReqMgaDbd.message.append(static_cast<char>(0x00)); /* Payload size */
     msgReqMgaDbd.message.append(static_cast<char>(0x00)); /* Payload size */
     addMessage(msgReqMgaDbd);
+}
+
+void UBX::uploadNavigationDatabase(QByteArray payload)
+{
+    UBXMessage msgUplMgaDbd;
+    msgUplMgaDbd.ack = false;
+    msgUplMgaDbd.message.append(0x13); /* Message class */
+    msgUplMgaDbd.message.append(0x80); /* Message id */
+    msgUplMgaDbd.message.append(payload.length() & 0xFF); /* Payload size */
+    msgUplMgaDbd.message.append((payload.length() >> 8) & 0xFF); /* Payload size */
+    msgUplMgaDbd.message.append(payload);
+    addMessage(msgUplMgaDbd);
 }
 
 void UBX::requestTime()

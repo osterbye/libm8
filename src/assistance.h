@@ -37,7 +37,10 @@ public:
 
     void saveAutonomousAssistData();
 
-public slots:
+private:
+    void uploadAutonomousAssistData();
+
+private slots:
     void saveNavigationEntry(QByteArray entry);
 
 private:

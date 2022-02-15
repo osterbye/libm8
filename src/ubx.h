@@ -47,6 +47,7 @@ public:
     void setAutonomousAssist(bool enabled);
     void requestSatelliteInfo();
     void requestNavigationDatabase();
+    void uploadNavigationDatabase(QByteArray payload);
 
 public slots:
     void requestTime();

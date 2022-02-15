@@ -41,11 +41,11 @@ Config::Config(QByteArray configPath, QObject *parent)
         QByteArray line = cfg.readLine();
         while (line.length() > 0) {
             if (line.startsWith("level:")) {
-                m_assistLevel = static_cast<ASSIST_LEVEL>(line.remove(0, 6).toInt());
+                m_assistLevel = static_cast<ASSIST_LEVEL>(line.remove(0, 6).trimmed().toInt());
             } else if (line.startsWith("offlinedir:")) {
-                m_offlineDirectory = line.mid(11);
+                m_offlineDirectory = line.mid(11).trimmed();
             } else if (line.startsWith("powersave:")) {
-                m_powerSave = static_cast<bool>(line.remove(0, 10).toInt());
+                m_powerSave = static_cast<bool>(line.remove(0, 10).trimmed().toInt());
             }
             line = cfg.readLine();
         }
@@ -76,7 +76,7 @@ ASSIST_LEVEL Config::assistLevel()
     return m_assistLevel;
 }
 
-QByteArray Config::offlineDir()
+QString Config::offlineDir()
 {
     return m_offlineDirectory;
 }
