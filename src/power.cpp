@@ -21,33 +21,37 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
-#ifndef M8_SV_INFO_H
-#define M8_SV_INFO_H
+#include "power.h"
+#include "config.h"
+#include "nmea.h"
+#include "ubx.h"
 
-#include <QtCore/qglobal.h>
-#include <QList>
+Power::Power(NMEA *nmea, UBX *ubx, Config *cfg, QObject *parent)
+    : QObject(parent), p_ubx(ubx), p_config(cfg), m_gnssActiveRequested(true), m_psmActive(false)
+{
+    if (cfg->powerSave())
+        connect(nmea, &NMEA::newPosition, this, &Power::newPosition);
+}
 
-/**
- * @brief Satellite signal information
- */
-struct M8_SV {
-    quint8 gnssId; /* GNSS identifier */
-    quint8 svId; /* Satellite identifier */
-    quint8 cno; /* Carrier to noise ratio (signal strength) [dBHz] */
-    qint8 elev; /* Elevation (range: +/-90), unknown if out of range [deg] */
-    qint16 azim; /* Azimuth (range 0-360), unknown if elevation is out of range [deg] */
-    qint16 prRes; /* Pseudorange residual [m] */
-    quint32 flags; /* Bitmask (see u-blox M8 protocol specification) */
-};
+void Power::setPower(bool on)
+{
+    if (on != m_gnssActiveRequested) {
+        p_ubx->setEngineState(on);
+        m_gnssActiveRequested = on;
+    }
+}
 
-/**
- * @brief UBX-NAV-SAT tracked satellites information
- */
-struct M8_SV_INFO {
-    quint32 iTOW; /* GPS time of week of the navigation epoch. [ms]  */
-    quint8 version; /* Message version */
-    quint8 numSvs; /* Number of satellites */
-    QList<M8_SV> satellites;
-};
+void Power::newPosition(double latitude, double longitude, float altitude, quint8 satellites)
+{
+    Q_UNUSED(latitude)
+    Q_UNUSED(longitude)
+    Q_UNUSED(altitude)
 
-#endif // M8_SV_INFO_H
+    if (!m_psmActive && satellites >= 10) {
+        m_psmActive = true;
+        p_ubx->setPowerSave(true);
+    } else if (m_psmActive && satellites <= 6) {
+        m_psmActive = false;
+        p_ubx->setPowerSave(false);
+    }
+}

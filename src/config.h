@@ -21,33 +21,33 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
-#ifndef M8_SV_INFO_H
-#define M8_SV_INFO_H
+#ifndef CONFIG_H
+#define CONFIG_H
 
-#include <QtCore/qglobal.h>
-#include <QList>
+#include <QObject>
 
-/**
- * @brief Satellite signal information
- */
-struct M8_SV {
-    quint8 gnssId; /* GNSS identifier */
-    quint8 svId; /* Satellite identifier */
-    quint8 cno; /* Carrier to noise ratio (signal strength) [dBHz] */
-    qint8 elev; /* Elevation (range: +/-90), unknown if out of range [deg] */
-    qint16 azim; /* Azimuth (range 0-360), unknown if elevation is out of range [deg] */
-    qint16 prRes; /* Pseudorange residual [m] */
-    quint32 flags; /* Bitmask (see u-blox M8 protocol specification) */
+typedef enum {
+    ASSIST_OFF,
+    ASSIST_BASIC,
+    ASSIST_AUTONOMOUS,
+    ASSIST_OFFLINE, /* Not supported yet */
+    ASSIST_ONLINE /* Not supported yet */
+} ASSIST_LEVEL;
+
+class Config : public QObject
+{
+    Q_OBJECT
+public:
+    explicit Config(QByteArray configPath, QObject *parent = nullptr);
+
+    ASSIST_LEVEL assistLevel();
+    QString offlineDir();
+    bool powerSave();
+
+private:
+    ASSIST_LEVEL m_assistLevel;
+    QString m_offlineDirectory;
+    bool m_powerSave;
 };
 
-/**
- * @brief UBX-NAV-SAT tracked satellites information
- */
-struct M8_SV_INFO {
-    quint32 iTOW; /* GPS time of week of the navigation epoch. [ms]  */
-    quint8 version; /* Message version */
-    quint8 numSvs; /* Number of satellites */
-    QList<M8_SV> satellites;
-};
-
-#endif // M8_SV_INFO_H
+#endif // CONFIG_H

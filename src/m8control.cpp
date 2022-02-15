@@ -1,7 +1,7 @@
 /*
 MIT License
 
-Copyright (c) 2020-2021 Nikolaj Due Østerbye
+Copyright (c) 2020-2022 Nikolaj Due Østerbye
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -23,7 +23,10 @@ SOFTWARE.
 */
 #include "m8control.h"
 #include "m8device.h"
+#include "assistance.h"
+#include "config.h"
 #include "nmea.h"
+#include "power.h"
 #include "ubx.h"
 #include <QThread>
 #include <QTimer>
@@ -36,7 +39,7 @@ SOFTWARE.
 #define M8C_D(x)
 #endif
 
-M8Control::M8Control(QString device, QObject *parent)
+M8Control::M8Control(QString device, QByteArray configPath, QObject *parent)
     : QObject(parent), m_status(M8_STATUS_INITIALIZING), m_chipConfirmationDone(false)
 {
     m_m8Device = new M8Device(device);
@@ -49,8 +52,15 @@ M8Control::M8Control(QString device, QObject *parent)
         m_ubx = new UBX(m_m8Device, this);
         connect(m_ubx, &UBX::systemTimeDrift, this, &M8Control::systemTimeDrift);
         connect(m_ubx, &UBX::satelliteInfo, this, &M8Control::satelliteInfo);
+        m_config = new Config(configPath, this);
+        m_power = new Power(m_nmea, m_ubx, m_config, this);
+        m_assistance = new Assistance(m_ubx, m_config, this);
+        m_statusTimer = new QTimer(this);
+        m_statusTimer->setInterval(3000);
+        connect(m_statusTimer, &QTimer::timeout, this, &M8Control::chipTimeout);
+
         connect(m_m8Device, &M8Device::data, this, &M8Control::deviceData);
-        QTimer::singleShot(5000, this, &M8Control::chipTimeout);
+        m_statusTimer->start();
     } else {
         delete m_m8Device;
         setStatus(M8_STATUS_ERROR_DRIVER);
@@ -65,6 +75,16 @@ M8Control::~M8Control()
         m_m8DeviceThread->deleteLater();
         delete m_m8Device;
     }
+}
+
+void M8Control::setPower(bool on)
+{
+    m_power->setPower(on);
+}
+
+void M8Control::saveAutonomousAssistData()
+{
+    m_assistance->saveAutonomousAssistData();
 }
 
 M8_STATUS M8Control::status()
@@ -104,9 +124,7 @@ void M8Control::deviceData(QByteArray ba)
                     M8C_D("NMEA checksum error: " << nmeaStr);
                 }
                 m_input.remove(0, nmeaEnd);
-                m_chipConfirmationDone = true;
-                if (M8_STATUS_ON != m_status)
-                    setStatus(M8_STATUS_ON);
+                setStatus(M8_STATUS_ON);
             } else {
                 M8C_D("Incomplete nmea string. Wait for more data. " << m_input);
                 break;
@@ -128,8 +146,8 @@ void M8Control::deviceData(QByteArray ba)
                         M8C_D("Incomplete ubx message. Wait for more data.");
                         break;
                     }
+                    setStatus(M8_STATUS_ON);
                 }
-                m_chipConfirmationDone = true;
             } else {
                 M8C_D("Incomplete ubx message. Wait for more data.");
                 break;
@@ -142,17 +160,19 @@ void M8Control::deviceData(QByteArray ba)
 
 void M8Control::chipTimeout()
 {
-    if (!m_chipConfirmationDone)
-        setStatus(M8_STATUS_ERROR_CHIP);
-
-    m_chipConfirmationDone = true;
+    M8_STATUS status = (m_chipConfirmationDone) ? M8_STATUS_OFF : M8_STATUS_ERROR_CHIP;
+    setStatus(status);
 }
 
 void M8Control::setStatus(M8_STATUS status)
 {
-    if (M8_STATUS_ON != m_status && M8_STATUS_ON == status)
-        m_ubx->configureNMEA();
+    if (status != m_status) {
+        if (M8_STATUS_ON == status) {
+            m_ubx->configureNMEA();
+            m_chipConfirmationDone = true;
+        }
 
-    m_status = status;
-    emit statusChange(m_status);
+        m_status = status;
+        emit statusChange(m_status);
+    }
 }

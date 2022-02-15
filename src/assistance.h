@@ -21,33 +21,32 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
-#ifndef M8_SV_INFO_H
-#define M8_SV_INFO_H
+#ifndef ASSISTANCE_H
+#define ASSISTANCE_H
 
-#include <QtCore/qglobal.h>
-#include <QList>
+#include <QObject>
 
-/**
- * @brief Satellite signal information
- */
-struct M8_SV {
-    quint8 gnssId; /* GNSS identifier */
-    quint8 svId; /* Satellite identifier */
-    quint8 cno; /* Carrier to noise ratio (signal strength) [dBHz] */
-    qint8 elev; /* Elevation (range: +/-90), unknown if out of range [deg] */
-    qint16 azim; /* Azimuth (range 0-360), unknown if elevation is out of range [deg] */
-    qint16 prRes; /* Pseudorange residual [m] */
-    quint32 flags; /* Bitmask (see u-blox M8 protocol specification) */
+class Config;
+class UBX;
+
+class Assistance : public QObject
+{
+    Q_OBJECT
+public:
+    explicit Assistance(UBX *ubx, Config *cfg, QObject *parent = nullptr);
+
+    void saveAutonomousAssistData();
+
+private:
+    void uploadAutonomousAssistData();
+
+private slots:
+    void saveNavigationEntry(QByteArray entry);
+
+private:
+    Config *p_cfg;
+    UBX *p_ubx;
+    int m_entryNumber;
 };
 
-/**
- * @brief UBX-NAV-SAT tracked satellites information
- */
-struct M8_SV_INFO {
-    quint32 iTOW; /* GPS time of week of the navigation epoch. [ms]  */
-    quint8 version; /* Message version */
-    quint8 numSvs; /* Number of satellites */
-    QList<M8_SV> satellites;
-};
-
-#endif // M8_SV_INFO_H
+#endif // ASSISTANCE_H

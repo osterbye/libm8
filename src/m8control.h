@@ -1,7 +1,7 @@
 /*
 MIT License
 
-Copyright (c) 2020-2021 Nikolaj Due Østerbye
+Copyright (c) 2020-2022 Nikolaj Due Østerbye
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -28,18 +28,24 @@ SOFTWARE.
 #include "m8_status.h"
 #include "m8_sv_info.h"
 
+class Assistance;
+class Config;
 class M8Device;
 class NMEA;
+class Power;
 class QThread;
+class QTimer;
 class UBX;
 
 class M8Control : public QObject
 {
     Q_OBJECT
 public:
-    explicit M8Control(QString device, QObject *parent = nullptr);
+    explicit M8Control(QString device, QByteArray configPath, QObject *parent = nullptr);
     ~M8Control();
 
+    void setPower(bool on);
+    void saveAutonomousAssistData();
     M8_STATUS status();
     void requestTime();
     void requestSatelliteInfo();
@@ -62,7 +68,11 @@ private:
     M8Device *m_m8Device;
     QThread *m_m8DeviceThread;
     M8_STATUS m_status;
+    QTimer *m_statusTimer;
     QByteArray m_input;
+    Assistance *m_assistance;
+    Config *m_config;
+    Power *m_power;
     NMEA *m_nmea;
     bool m_chipConfirmationDone;
     UBX *m_ubx;

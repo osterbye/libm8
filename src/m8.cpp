@@ -1,7 +1,7 @@
 /*
 MIT License
 
-Copyright (c) 2020-2021 Nikolaj Due Østerbye
+Copyright (c) 2020-2022 Nikolaj Due Østerbye
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -26,12 +26,27 @@ SOFTWARE.
 
 M8::M8(QString device, QObject *parent) : QObject(parent)
 {
-    m_control = new M8Control(device, this);
+    M8(device, "/etc/m8.conf", parent);
+}
+
+M8::M8(QString device, QByteArray configPath, QObject *parent) : QObject(parent)
+{
+    m_control = new M8Control(device, configPath, this);
     connect(m_control, &M8Control::statusChange, this, &M8::statusChange);
     connect(m_control, &M8Control::nmea, this, &M8::nmea);
     connect(m_control, &M8Control::newPosition, this, &M8::newPosition);
     connect(m_control, &M8Control::systemTimeDrift, this, &M8::systemTimeDrift);
     connect(m_control, &M8Control::satelliteInfo, this, &M8::satelliteInfo);
+}
+
+void M8::setPower(bool on)
+{
+    m_control->setPower(on);
+}
+
+void M8::saveAutonomousAssistData()
+{
+    m_control->saveAutonomousAssistData();
 }
 
 M8_STATUS M8::status()

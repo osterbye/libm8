@@ -1,7 +1,7 @@
 /*
 MIT License
 
-Copyright (c) 2020-2021 Nikolaj Due Østerbye
+Copyright (c) 2020-2022 Nikolaj Due Østerbye
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -35,7 +35,7 @@ SOFTWARE.
 #define UBX_D(x)
 #endif
 
-UBX::UBX(M8Device *device, QObject *parent) : QObject(parent)
+UBX::UBX(M8Device *device, QObject *parent) : QObject(parent), m_autonomousAssist(false)
 {
     UBX_D("constructor");
     m_ackQueue.message.clear();
@@ -145,7 +145,16 @@ void UBX::parse(const QByteArray &msg)
         }
         break;
     case 0x06:
-        if (0x3E == msg.at(1)) {
+        if (0x23 == msg.at(1)) {
+            UBX_D("UBX-CFG-NAVX5");
+            int payloadLen = msg.at(2) | (msg.at(3) << 8);
+            if (msg.size() >= (payloadLen + 6)) {
+                m_UbxCfgNavx5 = msg.mid(4, payloadLen);
+                setAutonomousAssist(m_autonomousAssist);
+            } else {
+                UBX_D("Error: wrong message size for UBX-CFG-NAVX5");
+            }
+        } else if (0x3E == msg.at(1)) {
 #ifdef UBX_DEBUG
             UBX_D("GNSS configuration:");
             UBX_D("Version:\t\t" << QString::number(msg.at(4) & 0xFF).toLatin1());
@@ -188,6 +197,17 @@ void UBX::parse(const QByteArray &msg)
             UBX_D("GNSS default:\t\t" << QString::number(msg.at(6) & 0xFF).toLatin1());
             UBX_D("GNSS enabled:\t\t" << QString::number(msg.at(7) & 0xFF).toLatin1());
             UBX_D("GNSS simultaneous:\t" << QString::number(msg.at(8) & 0xFF).toLatin1());
+        }
+        break;
+    case 0x13:
+        if (static_cast<char>(0x80) == msg.at(1)) {
+            UBX_D("UBX-MGA-DBD");
+            int payloadLen = msg.at(2) | (msg.at(3) << 8);
+            if (msg.size() >= (payloadLen + 6)) {
+                emit saveNavigationEntry(msg.mid(4, payloadLen));
+            } else {
+                UBX_D("Error: wrong message size for UBX-MGA-DBD");
+            }
         }
         break;
     default:
@@ -321,6 +341,116 @@ void UBX::configureNMEA()
 #endif
 }
 
+void UBX::injectTimeAssistance()
+{
+    UBXMessage msgIniTime;
+    msgIniTime.ack = false;
+    msgIniTime.message.append(0x13); /* Message class */
+    msgIniTime.message.append(0x40); /* Message id */
+    msgIniTime.message.append(static_cast<char>(0x18)); /* Payload size */
+    msgIniTime.message.append(static_cast<char>(0x00)); /* Payload size */
+    msgIniTime.message.append(0x10); /* Message type */
+    msgIniTime.message.append(static_cast<char>(0x00)); /* Message version */
+    msgIniTime.message.append(static_cast<char>(0x00)); /* Source (0: on receipt of message) */
+    msgIniTime.message.append(0x80); /* Leap seconds since 1980 (or 0x80 = -128 if unknown) */
+    QDateTime now = QDateTime::currentDateTimeUtc();
+    msgIniTime.message.append(now.date().year() & 0xFF); /* Year */
+    msgIniTime.message.append((now.date().year() >> 8) & 0xFF); /* Year */
+    msgIniTime.message.append(now.date().month() & 0xFF); /* Month */
+    msgIniTime.message.append(now.date().day() & 0xFF); /* Day */
+    msgIniTime.message.append(now.time().hour() & 0xFF); /* Hour */
+    msgIniTime.message.append(now.time().minute() & 0xFF); /* Minute */
+    msgIniTime.message.append(now.time().second() & 0xFF); /* Seconds */
+    msgIniTime.message.append(static_cast<char>(0x00)); /* Reserved1 */
+    msgIniTime.message.append(static_cast<char>(0x00)); /* Nanoseconds */
+    msgIniTime.message.append(static_cast<char>(0x00)); /* Nanoseconds */
+    msgIniTime.message.append(static_cast<char>(0x00)); /* Nanoseconds */
+    msgIniTime.message.append(static_cast<char>(0x00)); /* Nanoseconds */
+    msgIniTime.message.append(0x10); /* Seconds part of time accuracy */
+    msgIniTime.message.append(static_cast<char>(0x00)); /* Seconds part of time accuracy */
+    msgIniTime.message.append(static_cast<char>(0x00)); /* Reserved2 */
+    msgIniTime.message.append(static_cast<char>(0x00)); /* Reserved2 */
+    msgIniTime.message.append(static_cast<char>(0x00)); /* Nanoseconds part of time accuracy */
+    msgIniTime.message.append(static_cast<char>(0x00)); /* Nanoseconds part of time accuracy */
+    msgIniTime.message.append(static_cast<char>(0x00)); /* Nanoseconds part of time accuracy */
+    msgIniTime.message.append(static_cast<char>(0x00)); /* Nanoseconds part of time accuracy */
+    addMessage(msgIniTime, true);
+}
+
+void UBX::setEngineState(bool on)
+{
+    quint8 mode = (on) ? 0x09 : 0x08;
+    UBXMessage msgRST;
+    msgRST.ack = false;
+    msgRST.message.append(0x06); /* Message class */
+    msgRST.message.append(0x04); /* Message id */
+    msgRST.message.append(0x04); /* Payload size */
+    msgRST.message.append(static_cast<char>(0x00)); /* Payload size */
+    msgRST.message.append(static_cast<char>(0x00)); /* navBbrMask */
+    msgRST.message.append(static_cast<char>(0x00)); /* navBbrMask */
+    msgRST.message.append(mode); /* resetMode */
+    msgRST.message.append(static_cast<char>(0x00)); /* Reserved1 */
+    addMessage(msgRST);
+}
+
+void UBX::setPowerSave(bool on)
+{
+    quint8 mode = 0;
+    if (on) {
+        mode = 1;
+        UBXMessage msgPMS;
+        msgPMS.ack = false;
+        msgPMS.message.append(0x06); /* Message class */
+        msgPMS.message.append(0x86); /* Message id */
+        msgPMS.message.append(0x08); /* Payload size */
+        msgPMS.message.append(static_cast<char>(0x00)); /* Payload size */
+        msgPMS.message.append(static_cast<char>(0x00)); /* Message version */
+        msgPMS.message.append(0x03); /* Aggressive with 1Hz */
+        msgPMS.message.append(static_cast<char>(0x00)); /* Period, for interval mode */
+        msgPMS.message.append(static_cast<char>(0x00)); /* Period, for interval mode */
+        msgPMS.message.append(static_cast<char>(0x00)); /* onTime, for interval mode */
+        msgPMS.message.append(static_cast<char>(0x00)); /* onTime, for interval mode */
+        msgPMS.message.append(static_cast<char>(0x00)); /* Reserved1 */
+        msgPMS.message.append(static_cast<char>(0x00)); /* Reserved1 */
+        addMessage(msgPMS);
+    }
+
+    UBXMessage msgRXM;
+    msgRXM.ack = false;
+    msgRXM.message.append(0x06); /* Message class */
+    msgRXM.message.append(0x11); /* Message id */
+    msgRXM.message.append(0x02); /* Payload size */
+    msgRXM.message.append(static_cast<char>(0x00)); /* Payload size */
+    msgRXM.message.append(static_cast<char>(0x00)); /* Reserved1 */
+    msgRXM.message.append(mode); /* lpMode */
+    addMessage(msgRXM);
+}
+
+void UBX::setAutonomousAssist(bool enabled)
+{
+    m_autonomousAssist = enabled;
+    if (m_UbxCfgNavx5.isEmpty()) {
+        UBXMessage msgReqNavx5;
+        msgReqNavx5.ack = false;
+        msgReqNavx5.message.append(0x06); /* Message class */
+        msgReqNavx5.message.append(0x23); /* Message id */
+        msgReqNavx5.message.append(static_cast<char>(0x00)); /* Payload size */
+        msgReqNavx5.message.append(static_cast<char>(0x00)); /* Payload size */
+        addMessage(msgReqNavx5);
+    } else {
+        m_UbxCfgNavx5[27] = (enabled) ? 0x01 : 0x00;
+        int payloadLen = m_UbxCfgNavx5.length();
+        UBXMessage msgSetNavx5;
+        msgSetNavx5.ack = false;
+        msgSetNavx5.message.append(0x06); /* Message class */
+        msgSetNavx5.message.append(0x23); /* Message id */
+        msgSetNavx5.message.append(payloadLen & 0xFF); /* Payload size */
+        msgSetNavx5.message.append((payloadLen >> 8) & 0xFF); /* Payload size */
+        msgSetNavx5.message.append(m_UbxCfgNavx5);
+        addMessage(msgSetNavx5);
+    }
+}
+
 void UBX::requestSatelliteInfo()
 {
     UBXMessage msgReqSvInfo;
@@ -330,6 +460,29 @@ void UBX::requestSatelliteInfo()
     msgReqSvInfo.message.append(static_cast<char>(0x00)); /* Payload size */
     msgReqSvInfo.message.append(static_cast<char>(0x00)); /* Payload size */
     addMessage(msgReqSvInfo);
+}
+
+void UBX::requestNavigationDatabase()
+{
+    UBXMessage msgReqMgaDbd;
+    msgReqMgaDbd.ack = false;
+    msgReqMgaDbd.message.append(0x13); /* Message class */
+    msgReqMgaDbd.message.append(0x80); /* Message id */
+    msgReqMgaDbd.message.append(static_cast<char>(0x00)); /* Payload size */
+    msgReqMgaDbd.message.append(static_cast<char>(0x00)); /* Payload size */
+    addMessage(msgReqMgaDbd);
+}
+
+void UBX::uploadNavigationDatabase(QByteArray payload)
+{
+    UBXMessage msgUplMgaDbd;
+    msgUplMgaDbd.ack = false;
+    msgUplMgaDbd.message.append(0x13); /* Message class */
+    msgUplMgaDbd.message.append(0x80); /* Message id */
+    msgUplMgaDbd.message.append(payload.length() & 0xFF); /* Payload size */
+    msgUplMgaDbd.message.append((payload.length() >> 8) & 0xFF); /* Payload size */
+    msgUplMgaDbd.message.append(payload);
+    addMessage(msgUplMgaDbd);
 }
 
 void UBX::requestTime()
@@ -343,9 +496,13 @@ void UBX::requestTime()
     addMessage(msgReqTime);
 }
 
-void UBX::addMessage(UBXMessage message)
+void UBX::addMessage(UBXMessage message, bool priority)
 {
-    m_sendQueue.append(message);
+    if (priority) {
+        m_sendQueue.prepend(message);
+    } else {
+        m_sendQueue.append(message);
+    }
     sendNext();
 }
 
