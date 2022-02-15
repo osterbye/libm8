@@ -26,17 +26,12 @@ SOFTWARE.
 
 M8::M8(QString device, QObject *parent) : QObject(parent)
 {
-    M8(device, "/etc/m8.conf", parent);
+    init(device, "/etc/m8.conf");
 }
 
 M8::M8(QString device, QByteArray configPath, QObject *parent) : QObject(parent)
 {
-    m_control = new M8Control(device, configPath, this);
-    connect(m_control, &M8Control::statusChange, this, &M8::statusChange);
-    connect(m_control, &M8Control::nmea, this, &M8::nmea);
-    connect(m_control, &M8Control::newPosition, this, &M8::newPosition);
-    connect(m_control, &M8Control::systemTimeDrift, this, &M8::systemTimeDrift);
-    connect(m_control, &M8Control::satelliteInfo, this, &M8::satelliteInfo);
+    init(device, configPath);
 }
 
 void M8::setPower(bool on)
@@ -62,4 +57,14 @@ void M8::requestTime()
 void M8::requestSatelliteInfo()
 {
     m_control->requestSatelliteInfo();
+}
+
+void M8::init(QString device, QByteArray configPath)
+{
+    m_control = new M8Control(device, configPath, this);
+    connect(m_control, &M8Control::statusChange, this, &M8::statusChange);
+    connect(m_control, &M8Control::nmea, this, &M8::nmea);
+    connect(m_control, &M8Control::newPosition, this, &M8::newPosition);
+    connect(m_control, &M8Control::systemTimeDrift, this, &M8::systemTimeDrift);
+    connect(m_control, &M8Control::satelliteInfo, this, &M8::satelliteInfo);
 }

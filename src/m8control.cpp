@@ -125,6 +125,7 @@ void M8Control::deviceData(QByteArray ba)
                 }
                 m_input.remove(0, nmeaEnd);
                 setStatus(M8_STATUS_ON);
+                m_statusTimer->start();
             } else {
                 M8C_D("Incomplete nmea string. Wait for more data. " << m_input);
                 break;
@@ -147,6 +148,7 @@ void M8Control::deviceData(QByteArray ba)
                         break;
                     }
                     setStatus(M8_STATUS_ON);
+                    m_statusTimer->start();
                 }
             } else {
                 M8C_D("Incomplete ubx message. Wait for more data.");
@@ -167,6 +169,7 @@ void M8Control::chipTimeout()
 void M8Control::setStatus(M8_STATUS status)
 {
     if (status != m_status) {
+        M8C_D("Changing status:" << m_status << " to " << status);
         if (M8_STATUS_ON == status) {
             m_ubx->configureNMEA();
             m_chipConfirmationDone = true;

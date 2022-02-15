@@ -63,6 +63,9 @@ void Assistance::saveAutonomousAssistData()
 
 void Assistance::uploadAutonomousAssistData()
 {
+    if (!QDir(p_cfg->offlineDir()).exists())
+        return;
+
     QDir d(p_cfg->offlineDir(), { "*.dbd" });
     for (QString &filename : d.entryList()) {
         QFile f(p_cfg->offlineDir() % '/' % filename);
@@ -77,6 +80,9 @@ void Assistance::uploadAutonomousAssistData()
 
 void Assistance::saveNavigationEntry(QByteArray entry)
 {
+    if (!QDir(p_cfg->offlineDir()).exists())
+        return;
+
     if (0 == m_entryNumber) {
         QDir d(p_cfg->offlineDir(), { "*.dbd" });
         for (QString &filename : d.entryList()) {

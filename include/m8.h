@@ -52,6 +52,9 @@ signals:
     void satelliteInfo(M8_SV_INFO info);
 
 private:
+    void init(QString device, QByteArray configPath);
+
+private:
     M8Control *m_control;
 };
 

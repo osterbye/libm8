@@ -26,7 +26,7 @@ SOFTWARE.
 #include <QDateTime>
 #include <QTimer>
 
-//#define UBX_DEBUG
+#define UBX_DEBUG
 #ifdef UBX_DEBUG
 #include <QDebug>
 #include <QStringList>
@@ -70,6 +70,7 @@ void UBX::parse(const QByteArray &msg)
     switch (msg.at(0)) {
     case 0x01:
         if (0x21 == msg.at(1)) {
+            UBX_D("UBX-NAV-TIMEUTC");
             if ((msg.size() >= 24)) {
                 if (((msg.at(23) & 0x04) > 0) || ((msg.at(23) & 0x03) == 0x03)) {
                     QTime t(msg.at(20) & 0xFF, msg.at(21) & 0xFF, msg.at(22) & 0xFF,
@@ -324,7 +325,7 @@ void UBX::configureNMEA()
     msgNMEAConf.message[5] = 0x08; /* msgID */
     addMessage(msgNMEAConf);
 
-#ifdef UBX_DEBUG
+#ifdef UBX_DEBUG1
     /* Get enabled GNSS systems */
     UBXMessage msgGNSS;
     msgGNSS.ack = false;
@@ -343,6 +344,7 @@ void UBX::configureNMEA()
 
 void UBX::injectTimeAssistance()
 {
+    UBX_D(__PRETTY_FUNCTION__);
     UBXMessage msgIniTime;
     msgIniTime.ack = false;
     msgIniTime.message.append(0x13); /* Message class */
@@ -487,6 +489,7 @@ void UBX::uploadNavigationDatabase(QByteArray payload)
 
 void UBX::requestTime()
 {
+    UBX_D(__PRETTY_FUNCTION__);
     UBXMessage msgReqTime;
     msgReqTime.ack = false;
     msgReqTime.message.append(0x01); /* Message class */
@@ -512,8 +515,9 @@ void UBX::sendNext()
         UBX_D("sendNext(): Waiting for ACK");
     } else {
         if (!m_sendQueue.isEmpty()) {
-            // UBX_D("Sending next mesage");
             UBXMessage ubxMessage = m_sendQueue.takeFirst();
+            // UBX_D("Sending: " << QByteArray::number(ubxMessage.message[0], 16) << ", " <<
+            // QByteArray::number(ubxMessage.message[1], 16));
             encodeAndSend(ubxMessage.message);
             if (ubxMessage.ack) {
                 // Ack requested, so we wait for the ack before sending next message

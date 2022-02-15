@@ -22,13 +22,14 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 #include "config.h"
+#include <QDir>
 #include <QFile>
 
-#define CFG_DEBUG
+//#define CFG_DEBUG
 #ifdef CFG_DEBUG
 #include <QDebug>
 #include <QStringList>
-#define CFG_D(x) qDebug() << "[Assistance] " << x
+#define CFG_D(x) qDebug() << "[Config] " << x
 #else
 #define CFG_D(x)
 #endif
@@ -54,6 +55,12 @@ Config::Config(QByteArray configPath, QObject *parent)
 
     if (m_assistLevel > ASSIST_ONLINE)
         m_assistLevel = ASSIST_AUTONOMOUS;
+
+    if (!m_offlineDirectory.isEmpty() && !QDir(m_offlineDirectory).exists()) {
+        CFG_D("Creating offline directory");
+        if (!QDir().mkpath(m_offlineDirectory))
+            m_offlineDirectory.clear();
+    }
 
     if ((ASSIST_OFFLINE == m_assistLevel || ASSIST_AUTONOMOUS == m_assistLevel)
         && m_offlineDirectory.isEmpty())
