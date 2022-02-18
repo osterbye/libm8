@@ -69,6 +69,7 @@ private:
     UBXMessage m_ackQueue;
     QList<UBXMessage> m_sendQueue;
     QTimer *m_ackTimer;
+    QTimer *m_timeTimer;
     QByteArray m_UbxCfgNavx5;
     bool m_autonomousAssist;
 };

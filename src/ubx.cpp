@@ -26,7 +26,7 @@ SOFTWARE.
 #include <QDateTime>
 #include <QTimer>
 
-#define UBX_DEBUG
+//#define UBX_DEBUG
 #ifdef UBX_DEBUG
 #include <QDebug>
 #include <QStringList>
@@ -44,6 +44,10 @@ UBX::UBX(M8Device *device, QObject *parent) : QObject(parent), m_autonomousAssis
     m_ackTimer->setInterval(3000);
     m_ackTimer->setSingleShot(true);
     connect(m_ackTimer, &QTimer::timeout, this, &UBX::ackTimeout);
+    m_timeTimer = new QTimer(this);
+    m_timeTimer->setInterval(3000);
+    connect(m_timeTimer, &QTimer::timeout, this, &UBX::requestTime);
+    m_timeTimer->stop();
     connect(this, &UBX::writeMessage, device, &M8Device::write);
 }
 
@@ -83,11 +87,11 @@ void UBX::parse(const QByteArray &msg)
                     if (t.isValid() && d.isValid()) {
                         QDateTime dt(d, t);
                         emit systemTimeDrift(QDateTime::currentDateTimeUtc().msecsTo(dt));
+                        m_timeTimer->stop();
                         UBX_D("New UTC time: " << dt);
                     } else {
                         UBX_D("Time not valid yet: " << QDateTime(d, t) << "\tt: " << t.isValid()
                                                      << ",\td: " << d.isValid());
-                        QTimer::singleShot(1000, this, &UBX::requestTime);
                     }
                 } else {
 #ifdef UBX_DEBUG
@@ -102,7 +106,6 @@ void UBX::parse(const QByteArray &msg)
                           << dt << "\t\tvalidity flags: "
                           << QString::number((uint)(msg.at(23) & 0xFF), 16).toLatin1());
 #endif
-                    QTimer::singleShot(1000, this, &UBX::requestTime);
                 }
             }
         } else if (0x35 == msg.at(1)) {
@@ -490,6 +493,9 @@ void UBX::uploadNavigationDatabase(QByteArray payload)
 void UBX::requestTime()
 {
     UBX_D(__PRETTY_FUNCTION__);
+    if (!m_timeTimer->isActive())
+        m_timeTimer->start();
+
     UBXMessage msgReqTime;
     msgReqTime.ack = false;
     msgReqTime.message.append(0x01); /* Message class */
